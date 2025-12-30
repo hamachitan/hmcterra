@@ -3,7 +3,7 @@ WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN npm ci --production
 RUN npm cache clean --force
-RUN npm run build
 ENV NODE_ENV="production"
 COPY . .
+RUN npm i -g typescript && npm run build && npm uninstall -g typescript
 CMD [ "npm", "start" ]
