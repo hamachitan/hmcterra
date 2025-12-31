@@ -70,7 +70,6 @@ License:        MIT
   });
 
   test("processes PR with spec file that needs release bump", async () => {
-
     const mock = nock("https://api.github.com")
       .post("/app/installations/2/access_tokens")
       .reply(200, {
@@ -89,7 +88,7 @@ License:        MIT
       ])
       .get("/repos/hiimbex/testing-things/contents/test-package.spec?ref=abc123")
       .reply(200, {
-        content: Buffer.from(specContent).toString('base64')
+        content: Buffer.from("Packager: hamachitan <hamachitan@outlook.com>\n" + specContent).toString('base64')
       });
 
     // Mock madoguchi API response
