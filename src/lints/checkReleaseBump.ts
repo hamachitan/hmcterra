@@ -25,7 +25,7 @@ async function checkPackageExists(pkgName: string, version: string, release: str
   }
 }
 
-export async function checkReleaseBumpOnContent(context: any, app: any, file: any, specContent: string): Promise<void> {
+export async function checkReleaseBump(context: any, app: any, file: any, specContent: string): Promise<void> {
   const targetBranch = context.payload.pull_request.base.ref;
 
   if (!/^frawhide|el\d+|f\d+$/.test(targetBranch)) {

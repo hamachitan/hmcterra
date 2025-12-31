@@ -1,8 +1,8 @@
 import { Probot } from "probot";
 import { gitBranch2SatmBranch } from "./terrautil.js";
 import { getGithubUsernameFromEmail } from "./ghutil.js";
-import { checkReleaseBumpOnContent } from "./lints/checkReleaseBump.js";
-import { checkPackagerOnContent } from "./lints/checkPackager.js";
+import { checkReleaseBump } from "./lints/checkReleaseBump.js";
+import { checkPackager } from "./lints/checkPackager.js";
 import { postPrCommentIfNeeded } from "./commentUtils.js";
 
 const mdFullPkgNameRegex = /### Full Package Name\n\n(.+)-([^-]+)-([^-\n]+)$/m;
@@ -38,10 +38,10 @@ export default (app: Probot) => {
 
     const checkPromises = fileContents.map(async ({ file, specContent }) => {
       const promises: Promise<any>[] = [];
-      promises.push(checkReleaseBumpOnContent(context, app, file, specContent));
+      promises.push(checkReleaseBump(context, app, file, specContent));
 
       if (file.status === 'added')
-        promises.push(checkPackagerOnContent(specContent, file.filename));
+        promises.push(checkPackager(specContent, file.filename));
 
       const results = await Promise.all(promises);
       return results.at(1) ?? [];

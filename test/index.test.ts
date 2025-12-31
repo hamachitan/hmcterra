@@ -12,17 +12,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { describe, beforeEach, afterEach, test, expect, vi } from "vitest";
 
-const issueCreatedBody = { body: "Thanks for opening this issue!" };
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const privateKey = fs.readFileSync(
   path.join(__dirname, "fixtures/mock-cert.pem"),
   "utf-8",
-);
-
-const payload = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "fixtures/issues.opened.json"), "utf-8"),
 );
 
 const pullRequestPayload = {
@@ -51,6 +45,15 @@ const pullRequestPayload = {
 describe("My Probot app", () => {
   let probot: any;
 
+  const specContent = `Name:           test-package
+Version:        1.0.0
+Release:        1%{?dist}
+Summary:        A test package
+License:        MIT
+
+%description
+%{summary}`;
+
   beforeEach(() => {
     nock.disableNetConnect();
     probot = new Probot({
@@ -66,12 +69,91 @@ describe("My Probot app", () => {
     probot.load(myProbotApp);
   });
 
+  test("processes PR with spec file that needs release bump", async () => {
+
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+          issues: "write",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, [
+        {
+          filename: "test-package.spec",
+          status: "modified"
+        }
+      ])
+      .get("/repos/hiimbex/testing-things/contents/test-package.spec?ref=abc123")
+      .reply(200, {
+        content: Buffer.from(specContent).toString('base64')
+      });
+
+    // Mock madoguchi API response
+    const madoguchiMock = nock("https://madoguchi.fyralabs.com")
+      .get("/v4/terra40/packages/test-package")
+      .reply(200, [
+        { ver: "1.0.0", rel: "1" }
+      ]);
+
+    await probot.receive({ name: "pull_request", payload: pullRequestPayload });
+
+    expect(madoguchiMock.pendingMocks()).toStrictEqual([]);
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test("skips PR targeting unsupported branch", async () => {
+    const unsupportedPayload = {
+      ...pullRequestPayload,
+      pull_request: {
+        ...pullRequestPayload.pull_request,
+        base: { ref: "main" }
+      }
+    };
+
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, []);
+
+    await probot.receive({ name: "pull_request", payload: unsupportedPayload });
+
+    // Should not make any additional API calls beyond token and files
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test("skips PR with no spec files", async () => {
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, [
+        {
+          filename: "README.md",
+          status: "modified"
+        }
+      ]);
+
+    await probot.receive({ name: "pull_request", payload: pullRequestPayload });
+
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
   test("processes PR with new spec file missing packager", async () => {
-    const specContent = `Name:           test-package
-Version:        1.0.0
-Release:        1%{?dist}
-Summary:        A test package
-License:        MIT`;
 
     const openedPayload = {
       ...pullRequestPayload,

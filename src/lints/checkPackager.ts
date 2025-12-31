@@ -1,6 +1,6 @@
 import { runRpmspec } from "../utils.js";
 
-export async function checkPackagerOnContent(specContent: string, filename: string): Promise<string[]> {
+export async function checkPackager(specContent: string, filename: string): Promise<string[]> {
   try {
     const packager = await runRpmspec(specContent, '%{packager}');
     if (packager === '(none)') {
