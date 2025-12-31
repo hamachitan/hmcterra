@@ -5,8 +5,8 @@ const specReleaseRegex = /^Release:(\s*)([0-9]+)(.*)$/m;
 
 async function getPackageInfo(specContent: string): Promise<{ name: string, version: string, release: string } | null> {
   try {
-    const output = await runRpmspec(specContent, '%{name} %{version} %{release}');
-    const [name, version, release] = output.split(' ');
+    const output = await runRpmspec(specContent, '%{name} %{version} %{release}\n');
+    const [name, version, release] = output.split('\n')[0].split(' ');
     return { name, version, release };
   } catch (error) {
     return null;
@@ -27,11 +27,7 @@ async function checkPackageExists(pkgName: string, version: string, release: str
 
 export async function checkReleaseBump(context: any, app: any, file: any, specContent: string): Promise<void> {
   const targetBranch = context.payload.pull_request.base.ref;
-
-  if (!/^frawhide|el\d+|f\d+$/.test(targetBranch)) {
-    return;
-  }
-
+  if (!/^frawhide|el\d+|f\d+$/.test(targetBranch)) return;
   const satmBranch = gitBranch2SatmBranch(targetBranch);
 
   const pkgInfo = await getPackageInfo(specContent);
@@ -40,10 +36,9 @@ export async function checkReleaseBump(context: any, app: any, file: any, specCo
     return;
   }
 
+  if (!await checkPackageExists(pkgInfo.name, pkgInfo.version, pkgInfo.release, satmBranch)) return;
+
   const releaseNumber = parseInt(pkgInfo.release, 10);
-
-  if (!await checkPackageExists(pkgInfo.name, pkgInfo.version, releaseNumber, satmBranch)) return;
-
   const updatedSpecContent = specContent.replace(
     specReleaseRegex,
     (_match, whitespace, _currentNumber, suffix) => `Release:${whitespace}${releaseNumber + 1}${suffix}`
