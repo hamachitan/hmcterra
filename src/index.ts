@@ -40,8 +40,7 @@ export default (app: Probot) => {
       const promises: Promise<any>[] = [];
       promises.push(checkReleaseBump(context, app, file, specContent));
 
-      if (file.status === 'added')
-        promises.push(checkPackager(specContent, file.filename));
+      promises.push(checkPackager(specContent, file.filename));
 
       const results = await Promise.all(promises);
       return results.at(1) ?? [];
