@@ -10,9 +10,7 @@ import { Probot, ProbotOctokit } from "probot";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { describe, beforeEach, afterEach, test, expect } from "vitest";
-
-const issueCreatedBody = { body: "Thanks for opening this issue!" };
+import { describe, beforeEach, afterEach, test, expect, vi } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,12 +19,40 @@ const privateKey = fs.readFileSync(
   "utf-8",
 );
 
-const payload = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "fixtures/issues.opened.json"), "utf-8"),
-);
+const pullRequestPayload = {
+  action: "opened",
+  number: 1,
+  pull_request: {
+    number: 1,
+    base: {
+      ref: "f40"
+    },
+    head: {
+      sha: "abc123"
+    }
+  },
+  repository: {
+    name: "testing-things",
+    owner: {
+      login: "hiimbex"
+    }
+  },
+  installation: {
+    id: 2
+  }
+};
 
 describe("My Probot app", () => {
   let probot: any;
+
+  const specContent = `Name:           test-package
+Version:        1.0.0
+Release:        1%{?dist}
+Summary:        A test package
+License:        MIT
+
+%description
+%{summary}`;
 
   beforeEach(() => {
     nock.disableNetConnect();
@@ -43,26 +69,124 @@ describe("My Probot app", () => {
     probot.load(myProbotApp);
   });
 
-  test("creates a comment when an issue is opened", async () => {
+  test("processes PR with spec file that needs release bump", async () => {
+
     const mock = nock("https://api.github.com")
-      // Test that we correctly return a test token
       .post("/app/installations/2/access_tokens")
       .reply(200, {
         token: "test",
         permissions: {
+          pulls: "read",
           issues: "write",
         },
       })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, [
+        {
+          filename: "test-package.spec",
+          status: "modified"
+        }
+      ])
+      .get("/repos/hiimbex/testing-things/contents/test-package.spec?ref=abc123")
+      .reply(200, {
+        content: Buffer.from(specContent).toString('base64')
+      });
 
-      // Test that a comment is posted
+    // Mock madoguchi API response
+    const madoguchiMock = nock("https://madoguchi.fyralabs.com")
+      .get("/v4/terra40/packages/test-package")
+      .reply(200, [
+        { ver: "1.0.0", rel: "1" }
+      ]);
+
+    await probot.receive({ name: "pull_request", payload: pullRequestPayload });
+
+    expect(madoguchiMock.pendingMocks()).toStrictEqual([]);
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test("skips PR targeting unsupported branch", async () => {
+    const unsupportedPayload = {
+      ...pullRequestPayload,
+      pull_request: {
+        ...pullRequestPayload.pull_request,
+        base: { ref: "main" }
+      }
+    };
+
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, []);
+
+    await probot.receive({ name: "pull_request", payload: unsupportedPayload });
+
+    // Should not make any additional API calls beyond token and files
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test("skips PR with no spec files", async () => {
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, [
+        {
+          filename: "README.md",
+          status: "modified"
+        }
+      ]);
+
+    await probot.receive({ name: "pull_request", payload: pullRequestPayload });
+
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test("processes PR with new spec file missing packager", async () => {
+
+    const openedPayload = {
+      ...pullRequestPayload,
+      action: "opened"
+    };
+
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+          issues: "write",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, [
+        {
+          filename: "test-package.spec",
+          status: "added"
+        }
+      ])
+      .get("/repos/hiimbex/testing-things/contents/test-package.spec?ref=abc123")
+      .reply(200, {
+        content: Buffer.from(specContent).toString('base64')
+      })
       .post("/repos/hiimbex/testing-things/issues/1/comments", (body: any) => {
-        expect(body).toMatchObject(issueCreatedBody);
+        expect(body.body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
         return true;
       })
       .reply(200);
 
-    // Receive a webhook event
-    await probot.receive({ name: "issues", payload });
+    await probot.receive({ name: "pull_request", payload: openedPayload });
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
@@ -72,12 +196,3 @@ describe("My Probot app", () => {
     nock.enableNetConnect();
   });
 });
-
-// For more information about testing with Jest see:
-// https://facebook.github.io/jest/
-
-// For more information about using TypeScript in your tests, Jest recommends:
-// https://github.com/kulshekhar/ts-jest
-
-// For more information about testing with Nock see:
-// https://github.com/nock/nock
