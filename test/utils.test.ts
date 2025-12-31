@@ -21,7 +21,7 @@ describe("runRpmspec", () => {
 
   test("should extract release from spec file", async () => {
     const result = await runRpmspec(specContent, '%{release}');
-    expect(result).toMatch(/^1\./); // Should start with 1. as %?dist expands
+    expect(result).toBe('1');
   });
 
   test("should extract summary from spec file", async () => {
@@ -36,6 +36,6 @@ describe("runRpmspec", () => {
 
   test("should handle multiple fields", async () => {
     const result = await runRpmspec(specContent, '%{name} %{version} %{release}');
-    expect(result).toMatch(/^anda-srpm-macros 0\.2\.29 1\./);
+    expect(result).toBe('anda-srpm-macros 0.2.29 1');
   });
 });

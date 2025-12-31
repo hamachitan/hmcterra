@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc",
     "start": "probot run ./lib/index.js",
-    "test": "vitest --no-watch"
+    "test": "vitest --no-watch --coverage"
   },
   "dependencies": {
     "probot": "^13.4.5"
@@ -22,9 +22,10 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "nock": "^14.0.5",
+    "vitest": "^4.0.16",
+    "@vitest/coverage-v8": "^4.0.16",
     "smee-client": "^2.0.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "@types/pg": "8.15.1"

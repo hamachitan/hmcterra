@@ -6,7 +6,6 @@ async function searchCommits(octokit: ProbotOctokit, email: string) {
   const { data } = await octokit.search.commits({
     q: `author-email:${email}`,
     sort: 'author-date',
-    // eslint-disable-next-line camelcase
     per_page: 1,
   });
 

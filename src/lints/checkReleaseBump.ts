@@ -40,12 +40,7 @@ export async function checkReleaseBump(context: any, app: any, file: any, specCo
     return;
   }
 
-  const releaseMatch = pkgInfo.release.match(/^(\d+)(.*)$/);
-  if (!releaseMatch) {
-    app.log.warn(`cannot parse release from ${pkgInfo.release}`);
-    return;
-  }
-  const releaseNumber = parseInt(releaseMatch[1], 10);
+  const releaseNumber = parseInt(pkgInfo.release, 10);
 
   if (!await checkPackageExists(pkgInfo.name, pkgInfo.version, releaseNumber, satmBranch)) return;
 
