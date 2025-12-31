@@ -24,7 +24,7 @@
     "nock": "^14.0.5",
     "smee-client": "^2.0.0",
     "typescript": "^5.9.3",
-    "vitest": "^2.0.0"
+    "vitest": "^4.0.16"
   },
   "overrides": {
     "@types/pg": "8.15.1"
