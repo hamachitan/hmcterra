@@ -12,7 +12,7 @@ export async function runRpmspec(specContent: string, queryFormat: string): Prom
     } while (fs.existsSync(tempFile));
     fs.writeFileSync(tempFile, specContent);
 
-    const child = spawn('rpmspec', ['-q', tempFile, '--queryformat', queryFormat], { stdio: 'pipe' });
+    const child = spawn('rpmspec', ['-q', tempFile, '--undefine=dist', '--queryformat', queryFormat], { stdio: 'pipe' });
     let stdout = '';
     let stderr = '';
 
