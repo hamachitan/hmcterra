@@ -14,13 +14,14 @@
   "scripts": {
     "build": "tsc",
     "start": "probot run ./lib/index.js",
-    "test": "vitest"
+    "test": "vitest --no-watch --coverage"
   },
   "dependencies": {
     "probot": "^13.4.5"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "nock": "^14.0.5",
     "smee-client": "^2.0.0",
     "typescript": "^5.8.3",
