@@ -4,7 +4,7 @@
 import { describe, beforeAll, beforeEach, afterEach, test, expect, vi } from "vitest";
 import nock from "nock";
 // requiring our app implementation
-import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
+import myProbotApp, { handlePullRequestAutolabel, handlePullRequestLint } from "../src/index.js";
 import { Probot } from "probot";
 import pkg from "../package.json";
 import { MADOGUCHI_BASE_URL } from "../src/consts.js";
@@ -21,32 +21,7 @@ const privateKey = fs.readFileSync(
   "utf-8",
 );
 
-const pullRequestPayload = {
-  action: "opened",
-  number: 1,
-  pull_request: {
-    number: 1,
-    user: {
-      login: "testuser"
-    },
-    labels: [],
-    base: {
-      ref: "f40"
-    },
-    head: {
-      sha: "abc123"
-    }
-  },
-  repository: {
-    name: "testing-things",
-    owner: {
-      login: "hiimbex"
-    }
-  },
-  installation: {
-    id: 2
-  }
-};
+const pullRequestPayload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/pr_opened.json"), "utf-8"));
 
 describe("My Probot app", () => {
   let probot: unknown;
@@ -222,21 +197,10 @@ describe("My Probot app", () => {
       .post("/repos/hiimbex/testing-things/issues/1/assignees")
       .reply(200, {});
 
+    const issuePayload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/issue_opened.json"), "utf-8"));
     await (probot as Probot).receive({
       name: "issues.opened",
-      payload: {
-        action: "opened",
-        issue: {
-          number: 1,
-          assignee: { login: "hamachitan" },
-          body: "### Full Package Name\n\nanda-srpm-macros\n\n### Release Version\n\n40"
-        },
-        repository: {
-          owner: { login: "hiimbex" },
-          name: "testing-things"
-        },
-        installation: { id: 2 }
-      }
+      payload: issuePayload
     } as any);
 
     mockMadoguchi.done();
@@ -260,6 +224,53 @@ describe("My Probot app", () => {
 
     expect(mockRes.json).toHaveBeenCalledWith({ version: pkg.version });
   });
+
+  test("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
+    const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/pr_lint_payload.json"), "utf-8"));
+    const mockListFiles = vi.fn().mockResolvedValue({
+      data: [
+        { filename: "pkg1.spec", status: "modified" },
+        { filename: "pkg2.spec", status: "added" }
+      ]
+    });
+    const mockGetContent = vi.fn()
+      .mockResolvedValueOnce({ data: { content: Buffer.from("Name: pkg1\nVersion: 1.0\nRelease: 1\nSummary: test\nLicense: MIT\nPackager: test <test@example.com>").toString('base64') } })
+      .mockResolvedValueOnce({ data: { content: Buffer.from("Name: pkg2\nVersion: 2.0\nRelease: 1\nSummary: test2\nLicense: MIT\nPackager: test2 <test2@example.com>").toString('base64') } })
+    const mockCreateReview = vi.fn().mockResolvedValue({});
+    const mockRemoveReviewers = vi.fn().mockResolvedValue({});
+
+    const mockContext = {
+      payload,
+      octokit: {
+        pulls: {
+          listFiles: mockListFiles,
+          createReview: mockCreateReview,
+          removeRequestedReviewers: mockRemoveReviewers
+        },
+        repos: {
+          getContent: mockGetContent
+        }
+      },
+      pullRequest: vi.fn().mockImplementation(options => options),
+      repo: vi.fn().mockReturnValue({ owner: "hiimbex", repo: "testing-things" })
+    } as any;
+    const mockApp = { log: { warn: vi.fn(), error: vi.fn() } } as any;
+
+    await handlePullRequestLint(mockContext, mockApp);
+
+    expect(mockListFiles).toHaveBeenCalled();
+    expect(mockGetContent).toHaveBeenCalledTimes(2); // 2 for head
+    expect(mockCreateReview).toHaveBeenCalledWith({
+      event: "COMMENT",
+      body: "",
+      comments: expect.any(Array)
+    });
+    const call = mockCreateReview.mock.calls[0][0];
+    expect(call.comments.length).toBeGreaterThan(0); // at least one comment from lints
+    expect(mockRemoveReviewers).toHaveBeenCalledWith({ reviewers: ["hamachitan"] });
+  });
+
+
 
   afterEach(() => {
     nock.cleanAll();

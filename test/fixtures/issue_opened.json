@@ -1,0 +1,19 @@
+{
+  "action": "opened",
+  "issue": {
+    "number": 1,
+    "assignee": {
+      "login": "hamachitan"
+    },
+    "body": "### Full Package Name\n\nanda-srpm-macros\n\n### Release Version\n\n40"
+  },
+  "repository": {
+    "owner": {
+      "login": "hiimbex"
+    },
+    "name": "testing-things"
+  },
+  "installation": {
+    "id": 2
+  }
+}

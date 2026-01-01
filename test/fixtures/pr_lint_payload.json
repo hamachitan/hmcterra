@@ -1,0 +1,32 @@
+{
+  "action": "review_requested",
+  "number": 1,
+  "pull_request": {
+    "requested_reviewers": [
+      {
+        "login": "hamachitan"
+      }
+    ],
+    "number": 1,
+    "user": {
+      "login": "testuser"
+    },
+    "labels": [],
+    "base": {
+      "ref": "f40",
+      "sha": "base123"
+    },
+    "head": {
+      "sha": "abc123"
+    }
+  },
+  "repository": {
+    "name": "testing-things",
+    "owner": {
+      "login": "hiimbex"
+    }
+  },
+  "installation": {
+    "id": 2
+  }
+}

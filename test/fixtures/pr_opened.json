@@ -1,0 +1,26 @@
+{
+  "action": "opened",
+  "number": 1,
+  "pull_request": {
+    "number": 1,
+    "user": {
+      "login": "testuser"
+    },
+    "labels": [],
+    "base": {
+      "ref": "f40"
+    },
+    "head": {
+      "sha": "abc123"
+    }
+  },
+  "repository": {
+    "name": "testing-things",
+    "owner": {
+      "login": "hiimbex"
+    }
+  },
+  "installation": {
+    "id": 2
+  }
+}
