@@ -1,4 +1,4 @@
-name: Test
+name: Checks
 on:
   pull_request:
     branches: [main]
@@ -11,6 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: Tests
 
     steps:
       - name: Checkout code
@@ -36,6 +37,7 @@ jobs:
 
   eslint:
     runs-on: ubuntu-latest
+    name: ESLint
 
     steps:
       - name: Checkout code
