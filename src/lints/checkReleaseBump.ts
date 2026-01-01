@@ -1,4 +1,5 @@
 import { gitBranch2SatmBranch } from "../utils/terrautil.js";
+import { LintParams } from "../linting.js";
 import { runRpmspec } from "../utils/rpm.js";
 import { CheckResult } from "../linting.js";
 
@@ -26,12 +27,9 @@ async function checkPackageExists(pkgName: string, version: string, release: str
   }
 }
 
-import { LintParams } from "../linting.js";
-
 export async function checkReleaseBump({ context, app, file, specContent }: LintParams): Promise<CheckResult> {
   const result: CheckResult = { messages: [], reviewComments: [] };
   const targetBranch = context.payload.pull_request.base.ref;
-  if (!/^frawhide|el\d+|f\d+$/.test(targetBranch)) return result;
   const satmBranch = gitBranch2SatmBranch(targetBranch);
 
   const pkgInfo = await getPackageInfo(specContent);

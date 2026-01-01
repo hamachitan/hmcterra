@@ -55,7 +55,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
 
     result.reviewComments.push({
       path: file.filename,
-      position: lines.length - 1, // last line
+      position: lines.length, // last line
       body: `Changelog is missing in new spec file.\n\`\`\`suggestion\n${suggestion}\n\`\`\``,
     });
 
