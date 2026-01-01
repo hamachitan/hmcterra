@@ -1,8 +1,9 @@
 import { ApplicationFunctionOptions, Context, Probot } from "probot";
 import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.js";
 import { getGithubUsernameFromEmail } from "./utils/github.js";
+import { runRpmspec } from "./utils/rpm.js";
 import { lints } from "./linting.js";
-import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
+import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 
 const SYNCS_CACHE_EXPIRE = 12 * 60 * 60 * 1000; // 12 hours in ms
 let syncsCache = { syncs: [''], timestamp: 0, isExpired: () => process.env.VITEST === 'true' || Date.now() - syncsCache.timestamp >= SYNCS_CACHE_EXPIRE };
@@ -122,9 +123,9 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
     app.log.trace(`url: ${res.url}`);
 
     const specContent = await res.text();
-    const pkgerMatch = specPkgerRegex.exec(specContent);
-    pkgerEmail = pkgerMatch?.[1];
-    if (!pkgerEmail) {
+    const packager = await runRpmspec(specContent, '%{packager}');
+    const pkgerMatch = /^(.+)<(.+)>$/.exec(packager);
+    if (!(pkgerEmail = pkgerMatch?.[2])) {
       await context.octokit.issues.createComment(context.issue({ body: "🛑 Cannot find `Packager:` in spec file." }));
       return;
     }

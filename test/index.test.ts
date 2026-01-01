@@ -207,7 +207,7 @@ describe("My Probot app", () => {
   });
 
   test("handles issues.opened event", async () => {
-    const specContent = "Packager: test user <test@example.com>\n%changelog\n* Mon Jan 01 2024 test user <test@example.com> - 0.2.29-1\n- Initial package";
+    const specContent = fs.readFileSync('test/anda-srpm-macros.spec', 'utf8');
     const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
       .get("/redirect/terra40/packages/anda-srpm-macros/spec/raw")
       .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/terra40/packages/anda-srpm-macros/spec/raw` })
@@ -215,8 +215,8 @@ describe("My Probot app", () => {
       .reply(200, specContent);
 
     const mockGithub = nock("https://api.github.com")
-      .get("/search/users?q=test%40example.com%20in%3Aemail")
-      .reply(200, { items: [{ login: "testuser" }] })
+      .get("/search/users?q=some_packager%40example.com%20in%3Aemail")
+      .reply(200, { items: [{ login: "someuser" }] })
       .delete("/repos/hiimbex/testing-things/issues/1/assignees")
       .reply(200, {})
       .post("/repos/hiimbex/testing-things/issues/1/assignees")
