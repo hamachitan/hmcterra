@@ -1,9 +1,10 @@
 FROM registry.fedoraproject.org/fedora-minimal:43
 WORKDIR /usr/src/app
-RUN dnf in -y --setopt=max_parallel_downloads=20 --setopt=install_weak_deps=0 npm rpmspec
+COPY terra.repo /etc/yum.repos.d/
+RUN dnf in -y --repo=terra,fedora --setopt=max_parallel_downloads=20 --setopt=install_weak_deps=0 bun rpmspec
 COPY . .
-RUN npm ci --omit=dev && \
-    npm i -g typescript && npm run build && npm uninstall -g typescript && \
-    npm cache clean --force
+RUN bun ci --omit=dev && \
+    bun i typescript && bun run build && bun uninstall typescript && \
+    bun pm cache rm
 ENV NODE_ENV="production"
-CMD [ "npm", "start" ]
+CMD [ "bun", "start" ]
