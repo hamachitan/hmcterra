@@ -1,16 +1,16 @@
-// You can import your modules
+// you can import your modules
 // import index from '../src/index'
 
 import nock from "nock";
-// Requiring our app implementation
+// requiring our app implementation
 import myProbotApp from "../src/index.js";
 import { Probot, ProbotOctokit } from "probot";
-// Requiring our fixtures
+// requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { describe, beforeEach, afterEach, test, expect, vi } from "vitest";
+import { describe, beforeEach, afterEach, test, expect } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +43,7 @@ const pullRequestPayload = {
 };
 
 describe("My Probot app", () => {
-  let probot: any;
+  let probot: unknown;
 
   const specContent = `Name:           test-package
 Version:        1.0.0
@@ -65,8 +65,8 @@ License:        MIT
         throttle: { enabled: false },
       }),
     });
-    // Load our app into probot
-    probot.load(myProbotApp);
+    // load our app into probot
+    (probot as Probot).load(myProbotApp);
   });
 
   test("processes PR with spec file that needs release bump", async () => {
@@ -91,14 +91,14 @@ License:        MIT
         content: Buffer.from("Packager: hamachitan <hamachitan@outlook.com>\n" + specContent).toString('base64')
       });
 
-    // Mock madoguchi API response
+    // mock madoguchi API response
     const madoguchiMock = nock("https://madoguchi.fyralabs.com")
       .get("/v4/terra40/packages/test-package")
       .reply(200, [
         { ver: "1.0.0", rel: "1" }
       ]);
 
-    await probot.receive({ name: "pull_request", payload: pullRequestPayload });
+    await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
     expect(madoguchiMock.pendingMocks()).toStrictEqual([]);
     expect(mock.pendingMocks()).toStrictEqual([]);
@@ -124,9 +124,9 @@ License:        MIT
       .get("/repos/hiimbex/testing-things/pulls/1/files")
       .reply(200, []);
 
-    await probot.receive({ name: "pull_request", payload: unsupportedPayload });
+    await (probot as Probot).receive({ name: "pull_request", payload: unsupportedPayload } as any);
 
-    // Should not make any additional API calls beyond token and files
+    // should not make any additional API calls beyond token and files
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
@@ -147,7 +147,7 @@ License:        MIT
         }
       ]);
 
-    await probot.receive({ name: "pull_request", payload: pullRequestPayload });
+    await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
@@ -179,14 +179,14 @@ License:        MIT
       .reply(200, {
         content: Buffer.from(specContent).toString('base64')
       })
-       .post("/repos/hiimbex/testing-things/pulls/1/reviews", (body: any) => {
-         expect(body.event).toBe("COMMENT");
-         expect(body.body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
-         return true;
-       })
-       .reply(200);
+      .post("/repos/hiimbex/testing-things/pulls/1/reviews", (body: unknown) => {
+        expect((body as { event: string; body: string }).event).toBe("COMMENT");
+        expect((body as { event: string; body: string }).body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
+        return true;
+      })
+      .reply(200);
 
-    await probot.receive({ name: "pull_request", payload: openedPayload });
+    await (probot as Probot).receive({ name: "pull_request", payload: openedPayload } as any);
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });

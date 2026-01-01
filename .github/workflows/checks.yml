@@ -1,4 +1,4 @@
-name: Test
+name: Checks
 on:
   pull_request:
     branches: [main]
@@ -9,8 +9,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    name: Tests
 
     steps:
       - name: Checkout code
@@ -33,3 +34,24 @@ jobs:
         with:
           name: coverage-report
           path: coverage
+
+  eslint:
+    runs-on: ubuntu-latest
+    name: ESLint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.20.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install eslint
+
+      - name: Lint
+        run: npm run lint
+

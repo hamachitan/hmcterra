@@ -16,13 +16,13 @@ export async function runRpmspec(specContent: string, queryFormat: string, extra
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', (data) => stdout += data.toString());
-    child.stderr.on('data', (data) => stderr += data.toString());
+    child.stdout.on('data', data => stdout += data.toString());
+    child.stderr.on('data', data => stderr += data.toString());
 
-    child.on('close', (code) => {
+    child.on('close', code => {
       try {
         fs.unlinkSync(tempFile);
-      } catch (err) {
+      } catch (_err) {
         // ignore
       }
       if (code === 0) resolve(stdout.trim());
