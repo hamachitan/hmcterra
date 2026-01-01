@@ -4,13 +4,42 @@ import { getGithubUsernameFromEmail } from "./utils/github.js";
 import { lints } from "./linting.js";
 import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 
-export default (app: Probot, { getRouter }: ApplicationFunctionOptions) => {
-  if (!getRouter) return;
-  const router = getRouter("/");
-  router.get('/health', (_, res) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    res.json({ version: require("../package.json").version });
+export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
+  if (getRouter) {
+    const router = getRouter("/");
+    router.get('/health', (_, res) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      res.json({ version: require("../package.json").version });
+    });
+  }
+
+  const SYNCS_CACHE_EXPIRE = 12 * 60 * 60 * 1000; // 12 hours in ms
+  let syncsCache = { syncs: [''], timestamp: 0, isExpired: () => process.env.VITEST === 'true' || Date.now() - syncsCache.timestamp >= SYNCS_CACHE_EXPIRE };
+
+  app.on(["pull_request.opened", "pull_request.reopened"], async context => {
+    if (!isProdBranch(context.payload.pull_request.base.ref)) return;
+    if (context.payload.pull_request.labels.some(lbl => lbl.name === "nosync")) return;
+    if (context.payload.pull_request.user.login === "raboneko") return;
+    if (/\bnosync\b/.test(context.payload.pull_request.body ?? "")) return;
+
+    let repeating = false;
+    do { // repeat max twice
+      try {
+        let syncs: string[];
+        if (syncsCache.isExpired()) {
+          const labels = await context.octokit.issues.listLabelsForRepo(context.repo());
+          syncs = labels.data.map(lbl => lbl.name).filter(lbl => lbl.startsWith("sync-"));
+          syncsCache = { ...syncsCache, syncs, timestamp: Date.now() };
+        } else syncs = syncsCache.syncs;
+        await context.octokit.issues.addLabels(context.issue({ labels: syncs }));
+        app.log.debug(`labelled #${context.payload.pull_request.number}`);
+      } catch (err) {
+        app.log.error(`fail to autoassign labels: ${err}`);
+        syncsCache.timestamp = 0;
+      }
+    } while (!repeating && (repeating = syncsCache.isExpired()))
   });
+
   app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async context => {
     if (context.payload.action === "review_requested" && !context.payload.pull_request.requested_reviewers.some(user => "login" in user && (user as { login: string }).login === HAMACHITAN_USERNAME)) return;
     if (!isProdBranch(context.payload.pull_request.base.ref)) return;
@@ -66,7 +95,7 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions) => {
     }
   });
 
-  app.on(["issues.opened", "issues.closed"], async context => {
+  app.on(["issues.opened"], async context => {
     if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
 
     const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
