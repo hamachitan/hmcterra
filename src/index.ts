@@ -1,5 +1,5 @@
 import { Probot } from "probot";
-import { gitBranch2SatmBranch } from "./utils/terrautil.js";
+import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.js";
 import { getGithubUsernameFromEmail } from "./utils/github.js";
 import { lints } from "./linting.js";
 import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
@@ -7,6 +7,7 @@ import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME,
 export default (app: Probot) => {
   app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async context => {
     if (context.payload.action === "review_requested" && !context.payload.pull_request.requested_reviewers.some(user => "login" in user && (user as { login: string }).login === HAMACHITAN_USERNAME)) return;
+    if (!isProdBranch(context.payload.pull_request.base.ref)) return;
 
     const { data: files } = await context.octokit.pulls.listFiles(context.pullRequest());
     const specFiles = files.filter(file => file.filename.endsWith('.spec') && file.status !== 'removed' && file.status !== 'renamed');
