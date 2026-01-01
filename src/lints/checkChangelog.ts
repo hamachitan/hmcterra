@@ -23,7 +23,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
       result.reviewComments.push({
         path: file.filename,
         position: autoIndex + 1,
-        body: `\`%autochangelog\` is not supported in Terra. Consider replacing it with a proper changelog entry:\n\n\`\`\`suggestion\n${replacement}\n\`\`\``
+        body: `\`%autochangelog\` is not supported in Terra. Consider replacing it with a proper changelog entry:\n\n\`\`\`suggestion\n${replacement}\n\`\`\``,
       });
 
       app.log.info(`lint %autochangelog: ${file.filename}`);
@@ -56,7 +56,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
     result.reviewComments.push({
       path: file.filename,
       position: lines.length - 1, // last line
-      body: `Changelog is missing in new spec file.\n\`\`\`suggestion\n${suggestion}\n\`\`\``
+      body: `Changelog is missing in new spec file.\n\`\`\`suggestion\n${suggestion}\n\`\`\``,
     });
 
     app.log.info(`lint %changelog: ${file.filename}`);

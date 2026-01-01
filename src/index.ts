@@ -43,12 +43,11 @@ export default (app: Probot) => {
     }
 
     if (allMessages.length > 0 || allReviewComments.length > 0) {
-      await context.octokit.pulls.createReview({
-        ...context.pullRequest(),
-        event: 'COMMENT',
-        body: allMessages.join('\n\n') || 'Automated review comments:',
-        comments: allReviewComments
-      });
+      await context.octokit.pulls.createReview(context.pullRequest({
+        event: "COMMENT",
+        body: allMessages.join("\n\n") || "Automated review comments:",
+        comments: allReviewComments,
+      }));
     }
 
     if (context.payload.action == "review_requested") {
@@ -124,12 +123,8 @@ export default (app: Probot) => {
                   assignees: [githubUsername]
                 });
               })
-              .then(() => {
-                app.log.info(`assigned ${githubUsername} to issue #${context.payload.issue.number}`);
-              })
-              .catch(assignError => {
-                app.log.error(`fail to assign/unassign users to issue: ${assignError}`);
-              });
+              .then(() => app.log.info(`assigned ${githubUsername} to issue #${context.payload.issue.number}`))
+              .catch(assignError => app.log.error(`fail to assign/unassign users to issue: ${assignError}`));
           })
           .catch(async error => {
             app.log.error(error);

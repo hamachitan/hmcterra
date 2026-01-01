@@ -1,6 +1,6 @@
 import { ProbotOctokit } from "probot";
 
-//? 
+//? npm github-username
 
 async function searchCommits(octokit: ProbotOctokit, email: string) {
   const { data } = await octokit.search.commits({
@@ -18,7 +18,7 @@ async function searchCommits(octokit: ProbotOctokit, email: string) {
 export async function getGithubUsernameFromEmail(octokit: ProbotOctokit, email: string): Promise<string | null> {
   try {
     const { data } = await octokit.search.users({
-      q: `${email} in:email`
+      q: `${email} in:email`,
     });
 
     let i = data.items.length;
@@ -56,6 +56,6 @@ export async function createPullRequestReview(octokit: ProbotOctokit, pullReques
     ...pullRequest,
     event,
     body: body || 'Automated review comments:',
-    comments
+    comments,
   });
 }
