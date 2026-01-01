@@ -94,13 +94,13 @@ License:        MIT
     // mock madoguchi API response
     const madoguchiMock = nock("https://madoguchi.fyralabs.com")
       .get("/v4/terra40/packages/test-package")
-       .reply(200, [
-         { ver: "1.0.0", rel: "1" }
-       ]);
+      .reply(200, [
+        { ver: "1.0.0", rel: "1" }
+      ]);
 
-     await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
+    await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
-     expect(madoguchiMock.pendingMocks()).toStrictEqual([]);
+    expect(madoguchiMock.pendingMocks()).toStrictEqual([]);
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
@@ -124,7 +124,7 @@ License:        MIT
       .get("/repos/hiimbex/testing-things/pulls/1/files")
       .reply(200, []);
 
-     await (probot as Probot).receive({ name: "pull_request", payload: unsupportedPayload } as any);
+    await (probot as Probot).receive({ name: "pull_request", payload: unsupportedPayload } as any);
 
     // should not make any additional API calls beyond token and files
     expect(mock.pendingMocks()).toStrictEqual([]);
@@ -147,7 +147,7 @@ License:        MIT
         }
       ]);
 
-     await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
+    await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
@@ -179,14 +179,14 @@ License:        MIT
       .reply(200, {
         content: Buffer.from(specContent).toString('base64')
       })
-        .post("/repos/hiimbex/testing-things/pulls/1/reviews", (body: unknown) => {
-          expect((body as { event: string; body: string }).event).toBe("COMMENT");
-          expect((body as { event: string; body: string }).body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
-          return true;
-       })
-       .reply(200);
+      .post("/repos/hiimbex/testing-things/pulls/1/reviews", (body: unknown) => {
+        expect((body as { event: string; body: string }).event).toBe("COMMENT");
+        expect((body as { event: string; body: string }).body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
+        return true;
+      })
+      .reply(200);
 
-     await (probot as Probot).receive({ name: "pull_request", payload: openedPayload } as any);
+    await (probot as Probot).receive({ name: "pull_request", payload: openedPayload } as any);
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
