@@ -11,6 +11,16 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions) => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     res.json({ version: require("../package.json").version });
   });
+
+  app.on(["pull_request.opened", "pull_request.reopened"], async context => {
+    if (context.payload.pull_request.labels.some(lbl => lbl.name === "nosync")) return;
+    if (/\bnosync\b/.test(context.payload.pull_request.body ?? "")) return;
+    const labels = await context.octokit.issues.listLabelsForRepo(context.repo());
+    const syncs = labels.data.map(lbl => lbl.name).filter(lbl => lbl.startsWith("sync-"));
+    await context.octokit.issues.addLabels(context.issue({ labels: syncs }));
+    app.log.debug(`labelled #${context.payload.pull_request.number}`);
+  });
+
   app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async context => {
     if (context.payload.action === "review_requested" && !context.payload.pull_request.requested_reviewers.some(user => "login" in user && (user as { login: string }).login === HAMACHITAN_USERNAME)) return;
     if (!isProdBranch(context.payload.pull_request.base.ref)) return;
@@ -66,7 +76,7 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions) => {
     }
   });
 
-  app.on(["issues.opened", "issues.closed"], async context => {
+  app.on(["issues.opened"], async context => {
     if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
 
     const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
