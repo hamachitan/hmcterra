@@ -4,3 +4,5 @@ dev:
 
 test:
     bun run test
+
+t: test

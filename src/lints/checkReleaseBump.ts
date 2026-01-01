@@ -2,6 +2,7 @@ import { gitBranch2SatmBranch } from "../utils/terrautil.js";
 import { LintParams } from "../linting.js";
 import { runRpmspec } from "../utils/rpm.js";
 import { CheckResult } from "../linting.js";
+import { MADOGUCHI_BASE_URL } from "../consts.js";
 
 const specReleaseRegex = /^Release:(\s*)([0-9]+)(.*)$/m;
 
@@ -10,19 +11,19 @@ async function getPackageInfo(specContent: string): Promise<{ name: string, vers
     const output = await runRpmspec(specContent, '%{name} %{version} %{release}\n');
     const [name, version, release] = output.split('\n')[0].split(' ');
     return { name, version, release };
-  } catch (_error) {
+  } catch (_) {
     return null;
   }
 }
 
-async function checkPackageExists(pkgName: string, version: string, release: string | number, satmBranch: string): Promise<boolean> {
+export async function checkPackageExists(pkgName: string, version: string, release: string | number, satmBranch: string): Promise<boolean> {
   try {
-    const response = await fetch(`https://madoguchi.fyralabs.com/v4/terra${satmBranch}/packages/${pkgName}`);
+    const response = await fetch(`${MADOGUCHI_BASE_URL}/v4/terra${satmBranch}/packages/${pkgName}`);
     if (!response.ok) return false;
 
     const pkg = await response.json();
     return pkg.ver === version && pkg.rel.startsWith(`${release}.`);
-  } catch (_error) {
+  } catch (_) {
     return false;
   }
 }
@@ -34,7 +35,7 @@ export async function checkReleaseBump({ context, app, file, specContent }: Lint
 
   const pkgInfo = await getPackageInfo(specContent);
   if (!pkgInfo) {
-    app.log.warn(`cannot parse package info with rpmspec for ${file.filename}`);
+    app.log.error(`cannot parse package info with rpmspec for ${file.filename}`);
     return result;
   }
 
@@ -46,17 +47,15 @@ export async function checkReleaseBump({ context, app, file, specContent }: Lint
     (_match, whitespace, _currentNumber, suffix) => `Release:${whitespace}${releaseNumber + 1}${suffix}`
   );
 
-  await context.octokit.repos.createOrUpdateFileContents({
-    owner: context.payload.repository.owner.login,
-    repo: context.payload.repository.name,
+  await context.octokit.repos.createOrUpdateFileContents(context.repo({
     path: file.filename,
     message: `bump(${pkgInfo.name}): release ${releaseNumber} → ${releaseNumber + 1}`,
     content: Buffer.from(updatedSpecContent).toString('base64'),
     sha: file.sha,
     branch: context.payload.pull_request.head.ref,
-  });
+  }));
 
-  app.log.info(`Bumped release for ${file.filename} in PR #${context.payload.pull_request.number}`);
+  app.log.info(`bumped release for ${file.filename} in PR #${context.payload.pull_request.number}`);
 
   return result;
 }

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { runRpmspec } from "../src/utils/rpm.js";
+import { gitBranch2SatmBranch } from "../src/utils/terrautil.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const specFilePath = path.join(__dirname, "anda-srpm-macros.spec");
@@ -31,11 +32,18 @@ describe("runRpmspec", () => {
 
   test("should extract packager from spec file", async () => {
     const result = await runRpmspec(specContent, '%{packager}');
-    expect(result).toBe('(none)');
+    expect(result).toBe('some packager <some_packager@example.com>');
   });
 
   test("should handle multiple fields", async () => {
     const result = await runRpmspec(specContent, '%{name} %{version} %{release}');
     expect(result).toBe('anda-srpm-macros 0.2.29 1');
+  });
+});
+
+describe("terrautil", () => {
+  test("gitBranch2SatmBranch", () => {
+    expect(gitBranch2SatmBranch("f43")).toBe("43");
+    expect(gitBranch2SatmBranch("el10")).toBe("el10");
   });
 });

@@ -72,7 +72,7 @@ export async function handlePullRequestLint(context: Context<"pull_request">, ap
   if (allMessages.length > 0 || allReviewComments.length > 0) {
     await context.octokit.pulls.createReview(context.pullRequest({
       event: "COMMENT",
-      body: allMessages.join("\n\n") || "Automated review comments:",
+      body: allMessages.join("\n\n"),
       comments: allReviewComments,
     }));
   }
@@ -118,7 +118,7 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
       const pkgerMatch = specPkgerRegex.exec(specContent);
       const pkgerEmail = pkgerMatch?.[1];
       if (!pkgerEmail) {
-        await context.octokit.issues.createComment(context.issue({ body: "Cannot find `Packager:` in spec file." }));
+        await context.octokit.issues.createComment(context.issue({ body: "🛑 Cannot find `Packager:` in spec file." }));
         return;
       }
 
@@ -126,7 +126,7 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
         .then(async githubUsername => {
           if (!githubUsername) {
             await context.octokit.issues.createComment(context.issue({
-              body: `Cannot find GitHub user for email: ${pkgerEmail}`
+              body: `🛑 Cannot find GitHub user for email: ${pkgerEmail}`
             }));
             return;
           }
@@ -156,7 +156,7 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
         .catch(async error => {
           app.log.error(error);
           await context.octokit.issues.createComment(context.issue({
-            body: `Error searching GitHub user for email: ${pkgerEmail}`
+            body: `🛑 Error searching GitHub user for email: ${pkgerEmail}`
           }));
         });
     }, e => app.log.error(`cannot find pkg ${pkgname} from mg: ${e}`))
