@@ -53,5 +53,5 @@ jobs:
         run: npm install eslint
 
       - name: Lint
-        run: npm lint
+        run: npm run lint
 
