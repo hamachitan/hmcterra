@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-export async function runRpmspec(specContent: string, queryFormat: string): Promise<string> {
+export async function runRpmspec(specContent: string, queryFormat: string, extraArgs: string[] = []): Promise<string> {
   return new Promise((resolve, reject) => {
     const tempDir = os.tmpdir();
     let tempFile;
@@ -12,7 +12,7 @@ export async function runRpmspec(specContent: string, queryFormat: string): Prom
     } while (fs.existsSync(tempFile));
     fs.writeFileSync(tempFile, specContent);
 
-    const child = spawn('rpmspec', ['-q', tempFile, '--undefine=dist', '--queryformat', queryFormat], { stdio: 'pipe' });
+    const child = spawn('rpmspec', ['-q', tempFile, '--undefine=dist', ...extraArgs, '--queryformat', queryFormat], { stdio: 'pipe' });
     let stdout = '';
     let stderr = '';
 

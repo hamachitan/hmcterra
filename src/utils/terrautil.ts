@@ -1,0 +1,1 @@
+export const gitBranch2SatmBranch = (b: string) => b.startsWith("f") ? b.slice(1) : b;

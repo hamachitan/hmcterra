@@ -1,5 +1,6 @@
-import { gitBranch2SatmBranch } from "../terrautil.js";
-import { runRpmspec } from "../utils.js";
+import { gitBranch2SatmBranch } from "../utils/terrautil.js";
+import { runRpmspec } from "../utils/rpm.js";
+import { CheckResult } from "../linting.js";
 
 const specReleaseRegex = /^Release:(\s*)([0-9]+)(.*)$/m;
 
@@ -25,18 +26,21 @@ async function checkPackageExists(pkgName: string, version: string, release: str
   }
 }
 
-export async function checkReleaseBump(context: any, app: any, file: any, specContent: string): Promise<void> {
+import { LintParams } from "../linting.js";
+
+export async function checkReleaseBump({ context, app, file, specContent }: LintParams): Promise<CheckResult> {
+  const result: CheckResult = { messages: [], reviewComments: [] };
   const targetBranch = context.payload.pull_request.base.ref;
-  if (!/^frawhide|el\d+|f\d+$/.test(targetBranch)) return;
+  if (!/^frawhide|el\d+|f\d+$/.test(targetBranch)) return result;
   const satmBranch = gitBranch2SatmBranch(targetBranch);
 
   const pkgInfo = await getPackageInfo(specContent);
   if (!pkgInfo) {
     app.log.warn(`cannot parse package info with rpmspec for ${file.filename}`);
-    return;
+    return result;
   }
 
-  if (!await checkPackageExists(pkgInfo.name, pkgInfo.version, pkgInfo.release, satmBranch)) return;
+  if (!await checkPackageExists(pkgInfo.name, pkgInfo.version, pkgInfo.release, satmBranch)) return result;
 
   const releaseNumber = parseInt(pkgInfo.release, 10);
   const updatedSpecContent = specContent.replace(
@@ -55,4 +59,6 @@ export async function checkReleaseBump(context: any, app: any, file: any, specCo
   });
 
   app.log.info(`Bumped release for ${file.filename} in PR #${context.payload.pull_request.number}`);
+
+  return result;
 }

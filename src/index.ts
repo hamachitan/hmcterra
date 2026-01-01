@@ -1,17 +1,12 @@
 import { Probot } from "probot";
-import { gitBranch2SatmBranch } from "./terrautil.js";
-import { getGithubUsernameFromEmail } from "./ghutil.js";
-import { checkReleaseBump } from "./lints/checkReleaseBump.js";
-import { checkPackager } from "./lints/checkPackager.js";
-import { postPrCommentIfNeeded } from "./commentUtils.js";
-
-const mdFullPkgNameRegex = /### Full Package Name\n\n(.+)-([^-]+)-([^-\n]+)$/m;
-const mdRelverRegex = /### Release Version\n\n([\d\w]+)$/m;
-const specPkgerRegex = /^Packager:\s*.+<(.+?)>$/m;
+import { gitBranch2SatmBranch } from "./utils/terrautil.js";
+import { getGithubUsernameFromEmail } from "./utils/github.js";
+import { lints } from "./linting.js";
+import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 
 export default (app: Probot) => {
-  app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.closed", "pull_request.reopened"], async (context) => {
-    if (context.payload.action == "review_requested" && !context.payload.pull_request.requested_reviewers.some((user: any) => "login" in user && user.login == "hamachitan")) return;
+  app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async (context) => {
+    if (context.payload.action == "review_requested" && !context.payload.pull_request.requested_reviewers.some((user: any) => "login" in user && user.login == HAMACHITAN_USERNAME)) return;
 
     const { data: files } = await context.octokit.pulls.listFiles(context.pullRequest());
     const specFiles = files.filter(file => file.filename.endsWith('.spec') && file.status !== 'removed' && file.status !== 'renamed');
@@ -36,23 +31,29 @@ export default (app: Probot) => {
       }
     }))).filter(fc => fc !== null);
 
-    const checkPromises = fileContents.map(async ({ file, specContent }) => {
-      const promises: Promise<any>[] = [];
-      promises.push(checkReleaseBump(context, app, file, specContent));
+    const allMessages: string[] = [];
+    const allReviewComments: Array<{ path: string; position: number; body: string }> = [];
 
-      promises.push(checkPackager(specContent, file.filename));
+    for (const { file, specContent } of fileContents) {
+      for (const lint of lints) {
+        const result = await lint.check({ context, app, file, specContent });
+        allMessages.push(...result.messages);
+        allReviewComments.push(...result.reviewComments);
+      }
+    }
 
-      const results = await Promise.all(promises);
-      return results.at(1) ?? [];
-    });
-
-    const allMessages = (await Promise.all(checkPromises)).flat();
-
-    await postPrCommentIfNeeded(context, allMessages);
+    if (allMessages.length > 0 || allReviewComments.length > 0) {
+      await context.octokit.pulls.createReview({
+        ...context.pullRequest(),
+        event: 'COMMENT',
+        body: allMessages.join('\n\n') || 'Automated review comments:',
+        comments: allReviewComments
+      });
+    }
 
     if (context.payload.action == "review_requested") {
       try {
-        await context.octokit.pulls.removeRequestedReviewers(context.pullRequest({ reviewers: ['hamachitan'] }));
+        await context.octokit.pulls.removeRequestedReviewers(context.pullRequest({ reviewers: [HAMACHITAN_USERNAME] }));
       } catch (error) {
         app.log.error(`fail to remove hamachitan from reviewers: ${error}`);
       }
@@ -60,7 +61,7 @@ export default (app: Probot) => {
   });
 
   app.on(["issues.opened"], async (context) => {
-    if (context.payload.issue.assignee?.login != "hamachitan") return;
+    if (context.payload.issue.assignee?.login != HAMACHITAN_USERNAME) return;
 
     const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
     const pkgname = matches?.at(1);
@@ -80,7 +81,7 @@ export default (app: Probot) => {
     }
 
     const satmBranch = gitBranch2SatmBranch(relver);
-    await fetch(`https://madoguchi.fyralabs.com/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`)
+    await fetch(`${MADOGUCHI_BASE_URL}/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`)
       .then(async res => {
         if (!res.redirected) return app.log.error(`expected redirection from mg, got ${res.status}: ${await res.text()}`);
         if (!res.ok) return app.log.error(`mg err ${res.status}: ${await res.text()}`);
@@ -111,7 +112,7 @@ export default (app: Probot) => {
               owner: context.payload.repository.owner.login,
               repo: context.payload.repository.name,
               issue_number: context.payload.issue.number,
-              assignees: ['hamachitan']
+              assignees: [HAMACHITAN_USERNAME]
             })
               .then(() => {
                 app.log.info(`unassigned hamachitan from issue #${context.payload.issue.number}`);

@@ -179,11 +179,12 @@ License:        MIT
       .reply(200, {
         content: Buffer.from(specContent).toString('base64')
       })
-      .post("/repos/hiimbex/testing-things/issues/1/comments", (body: any) => {
-        expect(body.body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
-        return true;
-      })
-      .reply(200);
+       .post("/repos/hiimbex/testing-things/pulls/1/reviews", (body: any) => {
+         expect(body.event).toBe("COMMENT");
+         expect(body.body).toContain("The `Packager: name <mail@example.com>` preamble is missing in `test-package.spec` and should be added.");
+         return true;
+       })
+       .reply(200);
 
     await probot.receive({ name: "pull_request", payload: openedPayload });
 
