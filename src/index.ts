@@ -1,10 +1,16 @@
-import { Probot } from "probot";
+import { ApplicationFunctionOptions, Probot } from "probot";
 import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.js";
 import { getGithubUsernameFromEmail } from "./utils/github.js";
 import { lints } from "./linting.js";
 import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 
-export default (app: Probot) => {
+export default (app: Probot, { getRouter }: ApplicationFunctionOptions) => {
+  if (!getRouter) return;
+  const router = getRouter("/");
+  router.get('/health', (_, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    res.json({ version: require("../package.json").version });
+  });
   app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async context => {
     if (context.payload.action === "review_requested" && !context.payload.pull_request.requested_reviewers.some(user => "login" in user && (user as { login: string }).login === HAMACHITAN_USERNAME)) return;
     if (!isProdBranch(context.payload.pull_request.base.ref)) return;
@@ -36,8 +42,8 @@ export default (app: Probot) => {
     const allReviewComments: Array<{ path: string; position: number; body: string }> = [];
 
     const allResults = await Promise.all(
-      fileContents.flatMap(({file, specContent}) =>
-        lints.map(lint => lint.check({context, app, file, specContent}))
+      fileContents.flatMap(({ file, specContent }) =>
+        lints.map(lint => lint.check({ context, app, file, specContent }))
       )
     );
     allMessages.push(...allResults.flatMap(r => r.messages));
@@ -60,7 +66,7 @@ export default (app: Probot) => {
     }
   });
 
-  app.on(["issues.opened"], async context => {
+  app.on(["issues.opened", "issues.closed"], async context => {
     if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
 
     const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');

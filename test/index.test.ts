@@ -104,7 +104,7 @@ describe("My Probot app", () => {
 
     await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
-    expect(mock.pendingMocks()).toStrictEqual([]);
+    expect(mock.pendingMocks()).toStrictEqual(["POST https://api.github.com:443/app/installations/2/access_tokens", "GET https://api.github.com:443/repos/hiimbex/testing-things/pulls/1/files"]);
   });
 
   afterEach(() => {

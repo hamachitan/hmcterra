@@ -16,6 +16,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
 
+    "resolveJsonModule": true,
+
     "moduleResolution": "Node16",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
