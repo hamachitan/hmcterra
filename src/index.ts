@@ -5,8 +5,8 @@ import { lints } from "./linting.js";
 import { mdFullPkgNameRegex, mdRelverRegex, specPkgerRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 
 export default (app: Probot) => {
-  app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async (context) => {
-    if (context.payload.action == "review_requested" && !context.payload.pull_request.requested_reviewers.some((user: any) => "login" in user && user.login == HAMACHITAN_USERNAME)) return;
+  app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async context => {
+    if (context.payload.action == "review_requested" && !context.payload.pull_request.requested_reviewers.some(user => "login" in user && (user as { login: string }).login == HAMACHITAN_USERNAME)) return;
 
     const { data: files } = await context.octokit.pulls.listFiles(context.pullRequest());
     const specFiles = files.filter(file => file.filename.endsWith('.spec') && file.status !== 'removed' && file.status !== 'renamed');
@@ -60,7 +60,7 @@ export default (app: Probot) => {
     }
   });
 
-  app.on(["issues.opened"], async (context) => {
+  app.on(["issues.opened"], async context => {
     if (context.payload.issue.assignee?.login != HAMACHITAN_USERNAME) return;
 
     const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');

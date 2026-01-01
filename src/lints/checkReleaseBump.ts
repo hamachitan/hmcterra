@@ -9,7 +9,7 @@ async function getPackageInfo(specContent: string): Promise<{ name: string, vers
     const output = await runRpmspec(specContent, '%{name} %{version} %{release}\n');
     const [name, version, release] = output.split('\n')[0].split(' ');
     return { name, version, release };
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -21,7 +21,7 @@ async function checkPackageExists(pkgName: string, version: string, release: str
 
     const pkg = await response.json();
     return pkg.ver === version && pkg.rel.startsWith(`${release}.`);
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }

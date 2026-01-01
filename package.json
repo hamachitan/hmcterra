@@ -14,18 +14,24 @@
   "scripts": {
     "build": "tsc",
     "start": "probot run ./lib/index.js",
+    "lint": "eslint",
     "test": "vitest --no-watch --coverage"
   },
   "dependencies": {
     "probot": "^13.4.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/node": "^20.0.0",
-    "nock": "^14.0.5",
-    "vitest": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "jiti": "^2.6.1",
+    "nock": "^14.0.5",
     "smee-client": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.51.0",
+    "vitest": "^4.0.16"
   },
   "overrides": {
     "@types/pg": "8.15.1"

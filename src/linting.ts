@@ -8,15 +8,15 @@ export interface CheckResult {
 }
 
 export interface LintParams {
-  context?: any;
-  app: any;
-  file: any;
+  context?: unknown;
+  app: unknown;
+  file: unknown;
   specContent: string;
 }
 
 export interface LintFunction {
   name: string;
-  check: (params: LintParams) => Promise<CheckResult>;
+  check: (_params: LintParams) => Promise<CheckResult>;
 }
 
 import { checkReleaseBump } from "./lints/checkReleaseBump.js";

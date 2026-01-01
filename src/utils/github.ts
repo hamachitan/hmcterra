@@ -1,5 +1,7 @@
 import { ProbotOctokit } from "probot";
 
+//? 
+
 async function searchCommits(octokit: ProbotOctokit, email: string) {
   const { data } = await octokit.search.commits({
     q: `author-email:${email}`,
@@ -30,7 +32,7 @@ export async function getGithubUsernameFromEmail(octokit: ProbotOctokit, email: 
   }
 }
 
-export async function fetchSpecContent(octokit: any, owner: string, repo: string, path: string, ref: string): Promise<string | null> {
+export async function fetchSpecContent(octokit: ProbotOctokit, owner: string, repo: string, path: string, ref: string): Promise<string | null> {
   try {
     const { data: fileContent } = await octokit.repos.getContent({
       owner,
@@ -49,7 +51,7 @@ export async function fetchSpecContent(octokit: any, owner: string, repo: string
   }
 }
 
-export async function createPullRequestReview(octokit: any, pullRequest: any, event: string, body: string, comments: any[]) {
+export async function createPullRequestReview(octokit: ProbotOctokit, pullRequest: { owner: string; repo: string; pull_number: number }, event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT", body: string, comments: { path: string; position: number; body: string }[]) {
   return octokit.pulls.createReview({
     ...pullRequest,
     event,
