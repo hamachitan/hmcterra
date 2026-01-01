@@ -36,8 +36,8 @@ export default (app: Probot) => {
     const allReviewComments: Array<{ path: string; position: number; body: string }> = [];
 
     const allResults = await Promise.all(
-      fileContents.flatMap(({file, specContent}) =>
-        lints.map(lint => lint.check({context, app, file, specContent}))
+      fileContents.flatMap(({ file, specContent }) =>
+        lints.map(lint => lint.check({ context, app, file, specContent }))
       )
     );
     allMessages.push(...allResults.flatMap(r => r.messages));
