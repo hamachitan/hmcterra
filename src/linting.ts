@@ -14,7 +14,7 @@ export interface CheckResult {
 
 export interface LintParams {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context?: /* BaseWebhookEvent<"pull_request">*/ any;
+  context?: /* baseWebhookEvent<"pull_request">*/ any;
   app: Probot;
   file: { sha: string; filename: string; status: "added" | "removed" | "renamed" | "changed" | "modified" | "copied" | "unchanged"; additions: number; deletions: number; changes: number; blob_url: string; raw_url: string; contents_url: string; patch?: string; previous_filename?: string; };
   specContent: string;

@@ -1,9 +1,10 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
+import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
+  globalIgnores(["lib/"]),
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     plugins: { js },
@@ -26,6 +27,9 @@ export default defineConfig([
       ],
       "arrow-body-style": ["warn", "as-needed"],
       "arrow-parens": ["warn", "as-needed"],
+      "capitalized-comments": ["warn", "never"],
+      "eqeqeq": ["error", "smart"],
+      "no-else-return": ["warn"],
     },
   },
   {

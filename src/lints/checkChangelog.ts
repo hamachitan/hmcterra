@@ -49,7 +49,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
     const versionRelease = await runRpmspec(specContent, '%{version}-%{release}');
     const date = new Date().toDateString();
     let lastLine = lines[lines.length - 1] || '';
-    if (lastLine != '') lastLine += "\n";
+    if (lastLine !== '') lastLine += "\n";
 
     const suggestion = `${lastLine}\n%changelog\n* ${date} ${packager} - ${versionRelease}\n- Initial package`;
 

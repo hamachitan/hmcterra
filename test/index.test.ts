@@ -1,11 +1,11 @@
-// You can import your modules
+// you can import your modules
 // import index from '../src/index'
 
 import nock from "nock";
-// Requiring our app implementation
+// requiring our app implementation
 import myProbotApp from "../src/index.js";
 import { Probot, ProbotOctokit } from "probot";
-// Requiring our fixtures
+// requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
 import fs from "fs";
 import path from "path";
@@ -65,7 +65,7 @@ License:        MIT
         throttle: { enabled: false },
       }),
     });
-    // Load our app into probot
+    // load our app into probot
     (probot as Probot).load(myProbotApp);
   });
 
@@ -91,7 +91,7 @@ License:        MIT
         content: Buffer.from("Packager: hamachitan <hamachitan@outlook.com>\n" + specContent).toString('base64')
       });
 
-    // Mock madoguchi API response
+    // mock madoguchi API response
     const madoguchiMock = nock("https://madoguchi.fyralabs.com")
       .get("/v4/terra40/packages/test-package")
        .reply(200, [
@@ -126,7 +126,7 @@ License:        MIT
 
      await (probot as Probot).receive({ name: "pull_request", payload: unsupportedPayload } as any);
 
-    // Should not make any additional API calls beyond token and files
+    // should not make any additional API calls beyond token and files
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
