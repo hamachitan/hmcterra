@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { runRpmspec } from "../src/utils.js";
+import { runRpmspec } from "../src/utils/rpm.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const specFilePath = path.join(__dirname, "anda-srpm-macros.spec");

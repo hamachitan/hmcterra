@@ -1,7 +1,7 @@
-import { runRpmspec } from "../utils.js";
-import { CheckResult } from "../linting.js";
+import { runRpmspec } from "../utils/rpm.js";
+import { CheckResult, LintParams } from "../linting.js";
 
-export async function checkChangelog(app: any, file: any, specContent: string): Promise<CheckResult> {
+export async function checkChangelog({ app, file, specContent }: LintParams): Promise<CheckResult> {
   const result: CheckResult = { messages: [], reviewComments: [] };
 
   if (file.status !== 'added') return result;

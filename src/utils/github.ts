@@ -1,5 +1,3 @@
-//? https://github.com/sindresorhus/github-username/blob/main/index.js  MIT
-
 import { ProbotOctokit } from "probot";
 
 async function searchCommits(octokit: ProbotOctokit, email: string) {
@@ -30,4 +28,32 @@ export async function getGithubUsernameFromEmail(octokit: ProbotOctokit, email: 
   } catch (error) {
     throw new Error(`Error searching GitHub user for email ${email}: ${error}`);
   }
+}
+
+export async function fetchSpecContent(octokit: any, owner: string, repo: string, path: string, ref: string): Promise<string | null> {
+  try {
+    const { data: fileContent } = await octokit.repos.getContent({
+      owner,
+      repo,
+      path,
+      ref,
+    });
+
+    if (!('content' in fileContent)) {
+      return null;
+    }
+
+    return Buffer.from(fileContent.content, 'base64').toString('utf8');
+  } catch (error) {
+    throw new Error(`Error fetching content for ${path}: ${error}`);
+  }
+}
+
+export async function createPullRequestReview(octokit: any, pullRequest: any, event: string, body: string, comments: any[]) {
+  return octokit.pulls.createReview({
+    ...pullRequest,
+    event,
+    body: body || 'Automated review comments:',
+    comments
+  });
 }
