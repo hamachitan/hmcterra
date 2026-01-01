@@ -143,21 +143,10 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
 
   app.log.trace(`found username: ${githubUsername} for email: ${pkgerEmail}`);
 
-  // first unassign hamachitan, then assign the new packager
-  await context.octokit.issues.removeAssignees({
-    owner: context.payload.repository.owner.login,
-    repo: context.payload.repository.name,
-    issue_number: context.payload.issue.number,
-    assignees: [HAMACHITAN_USERNAME]
-  });
+  await context.octokit.issues.removeAssignees(context.issue({ assignees: [HAMACHITAN_USERNAME] }));
   app.log.info(`unassigned hamachitan from issue #${context.payload.issue.number}`);
 
-  await context.octokit.issues.addAssignees({
-    owner: context.payload.repository.owner.login,
-    repo: context.payload.repository.name,
-    issue_number: context.payload.issue.number,
-    assignees: [githubUsername]
-  });
+  await context.octokit.issues.addAssignees(context.issue({ assignees: [githubUsername] }));
   app.log.info(`assigned ${githubUsername} to issue #${context.payload.issue.number}`);
 }
 

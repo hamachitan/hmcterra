@@ -6,6 +6,7 @@ import nock from "nock";
 // requiring our app implementation
 import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
 import { Probot } from "probot";
+import pkg from "../package.json";
 import { MADOGUCHI_BASE_URL } from "../src/consts.js";
 // requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
@@ -240,6 +241,24 @@ describe("My Probot app", () => {
 
     mockMadoguchi.done();
     mockGithub.done();
+  });
+
+  test("health endpoint returns version from package.json", () => {
+    const mockRouter = { get: vi.fn() };
+    const getRouter = vi.fn().mockReturnValue(mockRouter);
+    const mockApp = { on: vi.fn() };
+
+    myProbotApp(mockApp as any, { getRouter });
+
+    expect(getRouter).toHaveBeenCalledWith("/");
+    expect(mockRouter.get).toHaveBeenCalledWith('/health', expect.any(Function));
+
+    const handler = mockRouter.get.mock.calls[0][1];
+    const mockRes = { json: vi.fn() };
+
+    handler({}, mockRes);
+
+    expect(mockRes.json).toHaveBeenCalledWith({ version: pkg.version });
   });
 
   afterEach(() => {
