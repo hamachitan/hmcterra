@@ -1,16 +1,16 @@
 // you can import your modules
 // import index from '../src/index'
 
+import { describe, beforeAll, beforeEach, afterEach, test, expect, vi } from "vitest";
 import nock from "nock";
 // requiring our app implementation
-import myProbotApp from "../src/index.js";
+import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
 import { Probot } from "probot";
 // requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { describe, beforeAll, beforeEach, afterEach, test, expect } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -116,57 +116,92 @@ describe("My Probot app", () => {
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
-  test.skip("adds sync labels to opened PR", async () => {
-    const mock = nock("https://api.github.com")
-      .get("/repos/hiimbex/synclbls/labels")
-      .reply(200, [{ name: "sync-frawhide" }, { name: "other-label" }])
-      .post("/repos/hiimbex/synclbls/issues/2/labels", data => data.length === 1 && data[0] === "sync-frawhide")
-      .reply(200, []);
+  test("adds sync labels to opened PR", async () => {
+    const listLabelsMock = vi.fn().mockResolvedValue({ data: [{ name: "sync-frawhide" }, { name: "other-label" }] });
+    const addLabelsMock = vi.fn().mockResolvedValue({});
+    const mockContext = {
+      payload: {
+        pull_request: {
+          number: 2,
+          base: { ref: "f40" },
+          labels: [],
+          user: { login: "testuser" }
+        },
+        action: "opened",
+        repository: { owner: { login: "hiimbex" }, name: "synclbls" }
+      },
+      octokit: {
+        issues: {
+          listLabelsForRepo: listLabelsMock,
+          addLabels: addLabelsMock
+        }
+      },
+      repo: vi.fn().mockReturnValue({ owner: "hiimbex", repo: "synclbls" }),
+      issue: vi.fn().mockReturnValue({ labels: ["sync-frawhide"] })
+    } as any;
+    const mockApp = { log: { debug: vi.fn() } } as any;
 
-    await (probot as Probot).receive({
-      name: "pull_request", payload: {
-        ...pullRequestPayload,
-        number: 2,
-        repository: { ...pullRequestPayload.repository, name: "synclbls" }
-      }
-    } as any);
-    expect(mock.pendingMocks()).toStrictEqual([]);
-  }, 10000);
+    await handlePullRequestAutolabel(mockContext, mockApp);
+
+    expect(listLabelsMock).toHaveBeenCalledWith({ owner: "hiimbex", repo: "synclbls" });
+    expect(addLabelsMock).toHaveBeenCalledWith({ labels: ["sync-frawhide"] });
+  });
 
   test("skips adding labels if PR has nosync label", async () => {
-    const payloadWithNosync = {
-      ...pullRequestPayload,
-      pull_request: {
-        ...pullRequestPayload.pull_request,
-        labels: [{ name: "nosync" }],
+    const listLabelsMock = vi.fn();
+    const addLabelsMock = vi.fn();
+    const mockContext = {
+      payload: {
+        pull_request: {
+          number: 1,
+          base: { ref: "f40" },
+          labels: [{ name: "nosync" }],
+          user: { login: "testuser" }
+        },
+        action: "opened"
       },
-    };
+      octokit: {
+        issues: {
+          listLabelsForRepo: listLabelsMock,
+          addLabels: addLabelsMock
+        }
+      }
+    } as any;
+    const mockApp = { log: { debug: vi.fn() } } as any;
 
-    const mock = nock("https://api.github.com")
-      .get("/repos/hiimbex/testing-things/pulls/1/files")
-      .reply(200, []);
+    await handlePullRequestAutolabel(mockContext, mockApp);
 
-    await (probot as Probot).receive({ name: "pull_request", payload: payloadWithNosync } as any);
-
-    expect(mock.pendingMocks()).toStrictEqual([]);
+    expect(listLabelsMock).not.toHaveBeenCalled();
+    expect(addLabelsMock).not.toHaveBeenCalled();
   });
 
   test("skips adding labels if PR body contains nosync", async () => {
-    const payloadWithNosyncBody = {
-      ...pullRequestPayload,
-      pull_request: {
-        ...pullRequestPayload.pull_request,
-        body: "This PR has nosync in the body",
+    const listLabelsMock = vi.fn();
+    const addLabelsMock = vi.fn();
+    const mockContext = {
+      payload: {
+        pull_request: {
+          number: 1,
+          base: { ref: "f40" },
+          labels: [],
+          user: { login: "testuser" },
+          body: "This PR has nosync in the body"
+        },
+        action: "opened"
       },
-    };
+      octokit: {
+        issues: {
+          listLabelsForRepo: listLabelsMock,
+          addLabels: addLabelsMock
+        }
+      }
+    } as any;
+    const mockApp = { log: { debug: vi.fn() } } as any;
 
-    const mock = nock("https://api.github.com")
-      .get("/repos/hiimbex/testing-things/pulls/1/files")
-      .reply(200, []);
+    await handlePullRequestAutolabel(mockContext, mockApp);
 
-    await (probot as Probot).receive({ name: "pull_request", payload: payloadWithNosyncBody } as any);
-
-    expect(mock.pendingMocks()).toStrictEqual([]);
+    expect(listLabelsMock).not.toHaveBeenCalled();
+    expect(addLabelsMock).not.toHaveBeenCalled();
   });
 
   afterEach(() => {
