@@ -3,14 +3,14 @@ import { gitBranch2SatmBranch } from "./terrautil.js";
 import { getGithubUsernameFromEmail } from "./ghutil.js";
 import { checkReleaseBump } from "./lints/checkReleaseBump.js";
 import { checkPackager } from "./lints/checkPackager.js";
-import { postPrCommentIfNeeded } from "./commentUtils.js";
+import { checkChangelog } from "./lints/checkChangelog.js";
 
 const mdFullPkgNameRegex = /### Full Package Name\n\n(.+)-([^-]+)-([^-\n]+)$/m;
 const mdRelverRegex = /### Release Version\n\n([\d\w]+)$/m;
 const specPkgerRegex = /^Packager:\s*.+<(.+?)>$/m;
 
 export default (app: Probot) => {
-  app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.closed", "pull_request.reopened"], async (context) => {
+  app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async (context) => {
     if (context.payload.action == "review_requested" && !context.payload.pull_request.requested_reviewers.some((user: any) => "login" in user && user.login == "hamachitan")) return;
 
     const { data: files } = await context.octokit.pulls.listFiles(context.pullRequest());
@@ -36,19 +36,34 @@ export default (app: Probot) => {
       }
     }))).filter(fc => fc !== null);
 
-    const checkPromises = fileContents.map(async ({ file, specContent }) => {
-      const promises: Promise<any>[] = [];
-      promises.push(checkReleaseBump(context, app, file, specContent));
+    const allMessages: string[] = [];
+    const allReviewComments: Array<{ path: string; position: number; body: string }> = [];
 
-      promises.push(checkPackager(specContent, file.filename));
+    for (const { file, specContent } of fileContents) {
+      // checkReleaseBump
+      const releaseResult = await checkReleaseBump(context, app, file, specContent);
+      allMessages.push(...releaseResult.messages);
+      allReviewComments.push(...releaseResult.reviewComments);
 
-      const results = await Promise.all(promises);
-      return results.at(1) ?? [];
-    });
+      // checkPackager
+      const packagerResult = await checkPackager(specContent, file.filename);
+      allMessages.push(...packagerResult.messages);
+      allReviewComments.push(...packagerResult.reviewComments);
 
-    const allMessages = (await Promise.all(checkPromises)).flat();
+      // checkChangelog
+      const changelogResult = await checkChangelog(app, file, specContent);
+      allMessages.push(...changelogResult.messages);
+      allReviewComments.push(...changelogResult.reviewComments);
+    }
 
-    await postPrCommentIfNeeded(context, allMessages);
+    if (allMessages.length > 0 || allReviewComments.length > 0) {
+      await context.octokit.pulls.createReview({
+        ...context.pullRequest(),
+        event: 'COMMENT',
+        body: allMessages.join('\n\n') || 'Automated review comments:',
+        comments: allReviewComments
+      });
+    }
 
     if (context.payload.action == "review_requested") {
       try {
