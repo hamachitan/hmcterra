@@ -6,6 +6,7 @@ import nock from "nock";
 // requiring our app implementation
 import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
 import { Probot } from "probot";
+import { MADOGUCHI_BASE_URL } from "../src/consts.js";
 // requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
 import fs from "fs";
@@ -202,6 +203,43 @@ describe("My Probot app", () => {
 
     expect(listLabelsMock).not.toHaveBeenCalled();
     expect(addLabelsMock).not.toHaveBeenCalled();
+  });
+
+  test("handles issues.opened event", async () => {
+    const specContent = "Packager: test user <test@example.com>\n%changelog\n* Mon Jan 01 2024 test user <test@example.com> - 0.2.29-1\n- Initial package";
+    const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
+      .get("/redirect/terra40/packages/anda-srpm-macros/spec/raw")
+      .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/terra40/packages/anda-srpm-macros/spec/raw` })
+      .get("/terra40/packages/anda-srpm-macros/spec/raw")
+      .reply(200, specContent);
+
+    const mockGithub = nock("https://api.github.com")
+      .get("/search/users?q=test%40example.com%20in%3Aemail")
+      .reply(200, { items: [{ login: "testuser" }] })
+      .delete("/repos/hiimbex/testing-things/issues/1/assignees")
+      .reply(200, {})
+      .post("/repos/hiimbex/testing-things/issues/1/assignees")
+      .reply(200, {});
+
+    await (probot as Probot).receive({
+      name: "issues.opened",
+      payload: {
+        action: "opened",
+        issue: {
+          number: 1,
+          assignee: { login: "hamachitan" },
+          body: "### Full Package Name\n\nanda-srpm-macros\n\n### Release Version\n\n40"
+        },
+        repository: {
+          owner: { login: "hiimbex" },
+          name: "testing-things"
+        },
+        installation: { id: 2 }
+      }
+    } as any);
+
+    mockMadoguchi.done();
+    mockGithub.done();
   });
 
   afterEach(() => {

@@ -1,4 +1,4 @@
-export const mdFullPkgNameRegex = /### Full Package Name\n\n(.+)-([^-]+)-([^-\n]+)$/m;
+export const mdFullPkgNameRegex = /### Full Package Name\n\n(.+)$/m;
 export const mdRelverRegex = /### Release Version\n\n([\d\w]+)$/m;
 export const specPkgerRegex = /^Packager:\s*.+<(.+?)>$/m;
 

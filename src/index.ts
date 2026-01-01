@@ -107,59 +107,58 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
   }
 
   const satmBranch = gitBranch2SatmBranch(relver);
-  await fetch(`${MADOGUCHI_BASE_URL}/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`)
-    .then(async res => {
-      if (!res.redirected) return app.log.error(`expected redirection from mg, got ${res.status}: ${await res.text()}`);
-      if (!res.ok) return app.log.error(`mg err ${res.status}: ${await res.text()}`);
+  let pkgerEmail;
+  try {
+    const res = await fetch(`${MADOGUCHI_BASE_URL}/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`);
+    if (!res.redirected) {
+      app.log.error(`expected redirection from mg, got ${res.status}: ${await res.text()}`);
+      return;
+    }
+    if (!res.ok) {
+      app.log.error(`mg err ${res.status}: ${await res.text()}`);
+      return;
+    }
 
-      app.log.trace(`url: ${res.url}`);
+    app.log.trace(`url: ${res.url}`);
 
-      const specContent = await res.text();
-      const pkgerMatch = specPkgerRegex.exec(specContent);
-      const pkgerEmail = pkgerMatch?.[1];
-      if (!pkgerEmail) {
-        await context.octokit.issues.createComment(context.issue({ body: "🛑 Cannot find `Packager:` in spec file." }));
-        return;
-      }
+    const specContent = await res.text();
+    const pkgerMatch = specPkgerRegex.exec(specContent);
+    pkgerEmail = pkgerMatch?.[1];
+    if (!pkgerEmail) {
+      await context.octokit.issues.createComment(context.issue({ body: "🛑 Cannot find `Packager:` in spec file." }));
+      return;
+    }
+  } catch (e) {
+    app.log.error(`cannot find pkg ${pkgname} from mg: ${e}`);
+    return
+  }
 
-      getGithubUsernameFromEmail(context.octokit, pkgerEmail)
-        .then(async githubUsername => {
-          if (!githubUsername) {
-            await context.octokit.issues.createComment(context.issue({
-              body: `🛑 Cannot find GitHub user for email: ${pkgerEmail}`
-            }));
-            return;
-          }
+  const githubUsername = await getGithubUsernameFromEmail(context.octokit, pkgerEmail);
+  if (!githubUsername) {
+    await context.octokit.issues.createComment(context.issue({
+      body: `🛑 Cannot find GitHub user for email: ${pkgerEmail}`
+    }));
+    return;
+  }
 
-          app.log.trace(`found username: ${githubUsername} for email: ${pkgerEmail}`);
+  app.log.trace(`found username: ${githubUsername} for email: ${pkgerEmail}`);
 
-          // first unassign hamachitan, then assign the new packager
-          context.octokit.issues.removeAssignees({
-            owner: context.payload.repository.owner.login,
-            repo: context.payload.repository.name,
-            issue_number: context.payload.issue.number,
-            assignees: [HAMACHITAN_USERNAME]
-          })
-            .then(() => {
-              app.log.info(`unassigned hamachitan from issue #${context.payload.issue.number}`);
+  // first unassign hamachitan, then assign the new packager
+  await context.octokit.issues.removeAssignees({
+    owner: context.payload.repository.owner.login,
+    repo: context.payload.repository.name,
+    issue_number: context.payload.issue.number,
+    assignees: [HAMACHITAN_USERNAME]
+  });
+  app.log.info(`unassigned hamachitan from issue #${context.payload.issue.number}`);
 
-              return context.octokit.issues.addAssignees({
-                owner: context.payload.repository.owner.login,
-                repo: context.payload.repository.name,
-                issue_number: context.payload.issue.number,
-                assignees: [githubUsername]
-              });
-            })
-            .then(() => app.log.info(`assigned ${githubUsername} to issue #${context.payload.issue.number}`))
-            .catch(assignError => app.log.error(`fail to assign/unassign users to issue: ${assignError}`));
-        })
-        .catch(async error => {
-          app.log.error(error);
-          await context.octokit.issues.createComment(context.issue({
-            body: `🛑 Error searching GitHub user for email: ${pkgerEmail}`
-          }));
-        });
-    }, e => app.log.error(`cannot find pkg ${pkgname} from mg: ${e}`))
+  await context.octokit.issues.addAssignees({
+    owner: context.payload.repository.owner.login,
+    repo: context.payload.repository.name,
+    issue_number: context.payload.issue.number,
+    assignees: [githubUsername]
+  });
+  app.log.info(`assigned ${githubUsername} to issue #${context.payload.issue.number}`);
 }
 
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
