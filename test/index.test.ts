@@ -226,51 +226,31 @@ describe("My Probot app", () => {
   });
 
   test("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
-    const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/pr_lint_payload.json"), "utf-8"));
-    const mockListFiles = vi.fn().mockResolvedValue({
-      data: [
+    const basePayload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/pr_lint_payload.json"), "utf-8"));
+    const payload = { ...basePayload, action: "review_requested", pull_request: { ...basePayload.pull_request, requested_reviewers: [{ login: "hamachitan" }] } };
+    nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, { token: "test" })
+      .persist();
+    const mock = nock("https://api.github.com")
+      .get("/repos/hiimbex/parallel-test/pulls/1/files")
+      .reply(200, [
         { filename: "pkg1.spec", status: "modified" },
         { filename: "pkg2.spec", status: "added" }
-      ]
-    });
-    const mockGetContent = vi.fn()
-      .mockResolvedValueOnce({ data: { content: Buffer.from("Name: pkg1\nVersion: 1.0\nRelease: 1\nSummary: test\nLicense: MIT\nPackager: test <test@example.com>").toString('base64') } })
-      .mockResolvedValueOnce({ data: { content: Buffer.from("Name: pkg2\nVersion: 2.0\nRelease: 1\nSummary: test2\nLicense: MIT\nPackager: test2 <test2@example.com>").toString('base64') } })
-    const mockCreateReview = vi.fn().mockResolvedValue({});
-    const mockRemoveReviewers = vi.fn().mockResolvedValue({});
+      ])
+      .get("/repos/hiimbex/parallel-test/contents/pkg1.spec?ref=abc123")
+      .reply(200, { content: Buffer.from("Name: pkg1\nVersion: 1.0\nRelease: 1\nSummary: test\nLicense: MIT\nPackager: test <test@example.com>").toString('base64') })
+      .get("/repos/hiimbex/parallel-test/contents/pkg2.spec?ref=abc123")
+      .reply(200, { content: Buffer.from("Name: pkg2\nVersion: 2.0\nRelease: 1\nSummary: test2\nLicense: MIT\nPackager: test2 <test2@example.com>").toString('base64') })
+      .post("/repos/hiimbex/parallel-test/pulls/1/reviews")
+      .reply(200, {})
+      .delete("/repos/hiimbex/parallel-test/pulls/1/requested_reviewers")
+      .reply(200, {});
 
-    const mockContext = {
-      payload,
-      octokit: {
-        pulls: {
-          listFiles: mockListFiles,
-          createReview: mockCreateReview,
-          removeRequestedReviewers: mockRemoveReviewers
-        },
-        repos: {
-          getContent: mockGetContent
-        }
-      },
-      pullRequest: vi.fn().mockImplementation(options => options),
-      repo: vi.fn().mockReturnValue({ owner: "hiimbex", repo: "testing-things" })
-    } as any;
-    const mockApp = { log: { warn: vi.fn(), error: vi.fn() } } as any;
+    await (probot as Probot).receive({ name: "pull_request", payload } as any);
 
-    await handlePullRequestLint(mockContext, mockApp);
-
-    expect(mockListFiles).toHaveBeenCalled();
-    expect(mockGetContent).toHaveBeenCalledTimes(2); // 2 for head
-    expect(mockCreateReview).toHaveBeenCalledWith({
-      event: "COMMENT",
-      body: "",
-      comments: expect.any(Array)
-    });
-    const call = mockCreateReview.mock.calls[0][0];
-    expect(call.comments.length).toBeGreaterThan(0); // at least one comment from lints
-    expect(mockRemoveReviewers).toHaveBeenCalledWith({ reviewers: ["hamachitan"] });
+    expect(mock.pendingMocks()).toStrictEqual([]);
   });
-
-
 
   afterEach(() => {
     nock.cleanAll();

@@ -23,8 +23,8 @@ export async function handlePullRequestAutolabel(context: Context<"pull_request"
         syncs = labels.data.map(lbl => lbl.name).filter((name: string) => name.startsWith("sync-"));
         syncsCache = { ...syncsCache, syncs, timestamp: Date.now() };
       } else syncs = syncsCache.syncs;
+      app.log.debug(`labelling #${context.payload.pull_request.number}`);
       await context.octokit.issues.addLabels(context.issue({ labels: syncs }));
-      app.log.debug(`labelled #${context.payload.pull_request.number}`);
     } catch (err) {
       app.log.error(`fail to autoassign labels: ${err}`);
       syncsCache.timestamp = 0;
@@ -80,9 +80,10 @@ export async function handlePullRequestLint(context: Context<"pull_request">, ap
 
   if (context.payload.action === "review_requested") {
     try {
+      app.log.info(`removing hamachitan from reviewers for PR #${context.payload.pull_request.number}`);
       await context.octokit.pulls.removeRequestedReviewers(context.pullRequest({ reviewers: [HAMACHITAN_USERNAME] }));
     } catch (error) {
-      app.log.error(`fail to remove hamachitan from reviewers: ${error}`);
+      app.log.error(`failed to remove hamachitan from reviewers: ${error}`);
     }
   }
 }
@@ -144,11 +145,11 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
 
   app.log.trace(`found username: ${githubUsername} for email: ${pkgerEmail}`);
 
+  app.log.info(`unassigning hamachitan from issue #${context.payload.issue.number}`);
   await context.octokit.issues.removeAssignees(context.issue({ assignees: [HAMACHITAN_USERNAME] }));
-  app.log.info(`unassigned hamachitan from issue #${context.payload.issue.number}`);
 
+  app.log.info(`assigning ${githubUsername} to issue #${context.payload.issue.number}`);
   await context.octokit.issues.addAssignees(context.issue({ assignees: [githubUsername] }));
-  app.log.info(`assigned ${githubUsername} to issue #${context.payload.issue.number}`);
 }
 
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
