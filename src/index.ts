@@ -35,13 +35,13 @@ export default (app: Probot) => {
     const allMessages: string[] = [];
     const allReviewComments: Array<{ path: string; position: number; body: string }> = [];
 
-    for (const { file, specContent } of fileContents) {
-      for (const lint of lints) {
-        const result = await lint.check({ context, app, file, specContent });
-        allMessages.push(...result.messages);
-        allReviewComments.push(...result.reviewComments);
-      }
-    }
+    const allResults = await Promise.all(
+      fileContents.flatMap(({file, specContent}) =>
+        lints.map(lint => lint.check({context, app, file, specContent}))
+      )
+    );
+    allMessages.push(...allResults.flatMap(r => r.messages));
+    allReviewComments.push(...allResults.flatMap(r => r.reviewComments));
 
     if (allMessages.length > 0 || allReviewComments.length > 0) {
       await context.octokit.pulls.createReview(context.pullRequest({
