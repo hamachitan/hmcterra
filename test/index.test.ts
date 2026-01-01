@@ -24,6 +24,10 @@ const pullRequestPayload = {
   number: 1,
   pull_request: {
     number: 1,
+    user: {
+      login: "testuser"
+    },
+    labels: [],
     base: {
       ref: "f40"
     },
@@ -94,17 +98,75 @@ describe("My Probot app", () => {
           pulls: "read",
         },
       })
+      .persist()
       .get("/repos/hiimbex/testing-things/pulls/1/files")
       .reply(200, [
         {
           filename: "README.md",
           status: "modified"
         }
-      ]);
+      ])
+      .get("/repos/hiimbex/testing-things/labels")
+      .reply(200, [])
+      .post("/repos/hiimbex/testing-things/issues/1/labels")
+      .reply(200, []);
 
     await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
-    expect(mock.pendingMocks()).toStrictEqual(["POST https://api.github.com:443/app/installations/2/access_tokens", "GET https://api.github.com:443/repos/hiimbex/testing-things/pulls/1/files"]);
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test.skip("adds sync labels to opened PR", async () => {
+    const mock = nock("https://api.github.com")
+      .get("/repos/hiimbex/synclbls/labels")
+      .reply(200, [{ name: "sync-frawhide" }, { name: "other-label" }])
+      .post("/repos/hiimbex/synclbls/issues/2/labels", data => data.length === 1 && data[0] === "sync-frawhide")
+      .reply(200, []);
+
+    await (probot as Probot).receive({
+      name: "pull_request", payload: {
+        ...pullRequestPayload,
+        number: 2,
+        repository: { ...pullRequestPayload.repository, name: "synclbls" }
+      }
+    } as any);
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  }, 10000);
+
+  test("skips adding labels if PR has nosync label", async () => {
+    const payloadWithNosync = {
+      ...pullRequestPayload,
+      pull_request: {
+        ...pullRequestPayload.pull_request,
+        labels: [{ name: "nosync" }],
+      },
+    };
+
+    const mock = nock("https://api.github.com")
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, []);
+
+    await (probot as Probot).receive({ name: "pull_request", payload: payloadWithNosync } as any);
+
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  test("skips adding labels if PR body contains nosync", async () => {
+    const payloadWithNosyncBody = {
+      ...pullRequestPayload,
+      pull_request: {
+        ...pullRequestPayload.pull_request,
+        body: "This PR has nosync in the body",
+      },
+    };
+
+    const mock = nock("https://api.github.com")
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, []);
+
+    await (probot as Probot).receive({ name: "pull_request", payload: payloadWithNosyncBody } as any);
+
+    expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
   afterEach(() => {
