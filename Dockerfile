@@ -1,4 +1,4 @@
-FROM fedora-minimal:rawhide
+FROM registry.fedoraproject.org/fedora-minimal:rawhide
 WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN dnf in -y npm rpmspec
