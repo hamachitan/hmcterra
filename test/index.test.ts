@@ -237,9 +237,9 @@ describe("My Probot app", () => {
         { filename: "pkg2.spec", status: "added" }
       ])
       .get("/repos/hiimbex/parallel-test/contents/pkg1.spec?ref=abc123")
-      .reply(200, { content: Buffer.from("Name: pkg1\nVersion: 1.0\nRelease: 1\nSummary: test\nLicense: MIT\nPackager: test <test@example.com>").toString('base64') })
+      .reply(200, { content: fs.readFileSync("./test/pkgs1.spec") })
       .get("/repos/hiimbex/parallel-test/contents/pkg2.spec?ref=abc123")
-      .reply(200, { content: Buffer.from("Name: pkg2\nVersion: 2.0\nRelease: 1\nSummary: test2\nLicense: MIT\nPackager: test2 <test2@example.com>").toString('base64') })
+      .reply(200, { content: fs.readFileSync("./test/pkgs2.spec") })
       .post("/repos/hiimbex/parallel-test/pulls/1/reviews")
       .reply(200, {})
       .delete("/repos/hiimbex/parallel-test/pulls/1/requested_reviewers")
