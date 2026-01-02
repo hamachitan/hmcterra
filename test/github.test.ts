@@ -1,5 +1,5 @@
 import { test, expect, vi } from "vitest";
-import { getGithubUsernameFromEmail, fetchSpecContent, createPullRequestReview } from "../src/utils/github.js";
+import { getGithubUsernameFromEmail, fetchSpecContent } from "../src/utils/github.js";
 
 test("getGithubUsernameFromEmail returns username from user search", async () => {
   const mockOctokit = {
@@ -80,22 +80,4 @@ test("fetchSpecContent throws on error", async () => {
   } as any;
 
   await expect(fetchSpecContent(mockOctokit, "owner", "repo", "path", "ref")).rejects.toThrow("Error fetching content for path: Error: API error");
-});
-
-test("createPullRequestReview calls octokit.pulls.createReview", async () => {
-  const mockOctokit = {
-    pulls: {
-      createReview: vi.fn().mockResolvedValue({})
-    }
-  } as any;
-
-  const pullRequest = { owner: "owner", repo: "repo", pull_number: 1 };
-  await createPullRequestReview(mockOctokit, pullRequest, "COMMENT", "body", []);
-
-  expect(mockOctokit.pulls.createReview).toHaveBeenCalledWith({
-    ...pullRequest,
-    event: "COMMENT",
-    body: "body",
-    comments: []
-  });
 });

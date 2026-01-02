@@ -4,12 +4,15 @@
 import { describe, beforeAll, beforeEach, afterEach, test, expect, vi } from "vitest";
 import nock from "nock";
 // requiring our app implementation
-import myProbotApp, { handlePullRequestAutolabel, handlePullRequestLint } from "../src/index.js";
+import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
 import { Probot } from "probot";
 import pkg from "../package.json";
 import { MADOGUCHI_BASE_URL } from "../src/consts.js";
 // requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
+import pullRequestPayload from "./fixtures/pr_opened.json";
+import issuePayload from "./fixtures/issue_opened.json";
+import reviewRequestedPayload from "./fixtures/pr_lint_payload.json";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -20,8 +23,6 @@ const privateKey = fs.readFileSync(
   path.join(__dirname, "fixtures/mock-cert.pem"),
   "utf-8",
 );
-
-const pullRequestPayload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/pr_opened.json"), "utf-8"));
 
 describe("My Probot app", () => {
   let probot: unknown;
@@ -185,8 +186,8 @@ describe("My Probot app", () => {
     const specContent = fs.readFileSync('test/anda-srpm-macros.spec', 'utf8');
     const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
       .get("/redirect/terra40/packages/anda-srpm-macros/spec/raw")
-      .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/terra40/packages/anda-srpm-macros/spec/raw` })
-      .get("/terra40/packages/anda-srpm-macros/spec/raw")
+      .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/redirected-real` })
+      .get("/redirected-real")
       .reply(200, specContent);
 
     const mockGithub = nock("https://api.github.com")
@@ -197,7 +198,6 @@ describe("My Probot app", () => {
       .post("/repos/hiimbex/testing-things/issues/1/assignees")
       .reply(200, {});
 
-    const issuePayload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/issue_opened.json"), "utf-8"));
     await (probot as Probot).receive({
       name: "issues.opened",
       payload: issuePayload
@@ -226,8 +226,6 @@ describe("My Probot app", () => {
   });
 
   test("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
-    const basePayload = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/pr_lint_payload.json"), "utf-8"));
-    const payload = { ...basePayload, action: "review_requested", pull_request: { ...basePayload.pull_request, requested_reviewers: [{ login: "hamachitan" }] } };
     nock("https://api.github.com")
       .post("/app/installations/2/access_tokens")
       .reply(200, { token: "test" })
@@ -247,7 +245,7 @@ describe("My Probot app", () => {
       .delete("/repos/hiimbex/parallel-test/pulls/1/requested_reviewers")
       .reply(200, {});
 
-    await (probot as Probot).receive({ name: "pull_request", payload } as any);
+    await (probot as Probot).receive({ name: "pull_request", payload: reviewRequestedPayload } as any);
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
