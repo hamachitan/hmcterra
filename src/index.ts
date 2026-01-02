@@ -4,6 +4,7 @@ import { getGithubUsernameFromEmail } from "./utils/github.js";
 import { runRpmspec } from "./utils/rpm.js";
 import { lints } from "./linting.js";
 import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
+import { readFileSync } from "fs";
 
 const SYNCS_CACHE_EXPIRE = 12 * 60 * 60 * 1000; // 12 hours in ms
 let syncsCache = { syncs: [''], timestamp: 0, isExpired: () => process.env.VITEST === 'true' || Date.now() - syncsCache.timestamp >= SYNCS_CACHE_EXPIRE };
@@ -152,12 +153,13 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
   await context.octokit.issues.addAssignees(context.issue({ assignees: [githubUsername] }));
 }
 
+const { version } = JSON.parse(readFileSync("package.json").toString());
+
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
   if (getRouter) {
     const router = getRouter("/");
     router.get('/health', (_, res) => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      res.json({ version: require("../package.json").version });
+      res.json({ version });
     });
   }
 
