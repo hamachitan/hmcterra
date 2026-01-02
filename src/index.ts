@@ -15,7 +15,7 @@ export async function handlePullRequestAutolabel(context: Context<"pull_request"
   if (context.payload.pull_request.user.login === "raboneko") return;
   if (/\bnosync\b/.test(context.payload.pull_request.body ?? "")) return;
 
-  let repeating = false;
+  let last = syncsCache.isExpired();
   do { // repeat max twice
     try {
       let syncs: string[];
@@ -30,7 +30,7 @@ export async function handlePullRequestAutolabel(context: Context<"pull_request"
       app.log.error(`fail to autoassign labels: ${err}`);
       syncsCache.timestamp = 0;
     }
-  } while (!repeating && (repeating = syncsCache.isExpired()))
+  } while (!last && (last = syncsCache.isExpired()))
 }
 
 export async function handlePullRequestLint(context: Context<"pull_request">, app: Probot) {
