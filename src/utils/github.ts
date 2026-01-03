@@ -50,12 +50,3 @@ export async function fetchSpecContent(octokit: ProbotOctokit, owner: string, re
     throw new Error(`Error fetching content for ${path}: ${error}`);
   }
 }
-
-export async function createPullRequestReview(octokit: ProbotOctokit, pullRequest: { owner: string; repo: string; pull_number: number }, event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT", body: string, comments: { path: string; position: number; body: string }[]) {
-  return octokit.pulls.createReview({
-    ...pullRequest,
-    event,
-    body: body || 'Automated review comments:',
-    comments,
-  });
-}

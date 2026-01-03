@@ -1,16 +1,21 @@
 // you can import your modules
 // import index from '../src/index'
 
+import { describe, beforeAll, beforeEach, afterEach, test, expect, vi } from "vitest";
 import nock from "nock";
 // requiring our app implementation
-import myProbotApp from "../src/index.js";
+import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
 import { Probot } from "probot";
+import pkg from "../package.json";
+import { MADOGUCHI_BASE_URL } from "../src/consts.js";
 // requiring our fixtures
 //import payload from "./fixtures/issues.opened.json" with { "type": "json"};
+import pullRequestPayload from "./fixtures/pr_opened.json";
+import issuePayload from "./fixtures/issue_opened.json";
+import reviewRequestedPayload from "./fixtures/pr_lint_payload.json";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { describe, beforeAll, beforeEach, afterEach, test, expect } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,33 +23,6 @@ const privateKey = fs.readFileSync(
   path.join(__dirname, "fixtures/mock-cert.pem"),
   "utf-8",
 );
-
-const pullRequestPayload = {
-  action: "opened",
-  number: 1,
-  pull_request: {
-    number: 1,
-    user: {
-      login: "testuser"
-    },
-    labels: [],
-    base: {
-      ref: "f40"
-    },
-    head: {
-      sha: "abc123"
-    }
-  },
-  repository: {
-    name: "testing-things",
-    owner: {
-      login: "hiimbex"
-    }
-  },
-  installation: {
-    id: 2
-  }
-};
 
 describe("My Probot app", () => {
   let probot: unknown;
@@ -116,55 +94,158 @@ describe("My Probot app", () => {
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
-  test.skip("adds sync labels to opened PR", async () => {
-    const mock = nock("https://api.github.com")
-      .get("/repos/hiimbex/synclbls/labels")
-      .reply(200, [{ name: "sync-frawhide" }, { name: "other-label" }])
-      .post("/repos/hiimbex/synclbls/issues/2/labels", data => data.length === 1 && data[0] === "sync-frawhide")
-      .reply(200, []);
+  test("adds sync labels to opened PR", async () => {
+    const listLabelsMock = vi.fn().mockResolvedValue({ data: [{ name: "sync-frawhide" }, { name: "other-label" }] });
+    const addLabelsMock = vi.fn().mockResolvedValue({});
+    const mockContext = {
+      payload: {
+        pull_request: {
+          number: 2,
+          base: { ref: "f40" },
+          labels: [],
+          user: { login: "testuser" }
+        },
+        action: "opened",
+        repository: { owner: { login: "hiimbex" }, name: "synclbls" }
+      },
+      octokit: {
+        issues: {
+          listLabelsForRepo: listLabelsMock,
+          addLabels: addLabelsMock
+        }
+      },
+      repo: vi.fn().mockReturnValue({ owner: "hiimbex", repo: "synclbls" }),
+      issue: vi.fn().mockReturnValue({ labels: ["sync-frawhide"] })
+    } as any;
+    const mockApp = { log: { debug: vi.fn() } } as any;
 
-    await (probot as Probot).receive({
-      name: "pull_request", payload: {
-        ...pullRequestPayload,
-        number: 2,
-        repository: { ...pullRequestPayload.repository, name: "synclbls" }
-      }
-    } as any);
-    expect(mock.pendingMocks()).toStrictEqual([]);
-  }, 10000);
+    await handlePullRequestAutolabel(mockContext, mockApp);
+
+    expect(listLabelsMock).toHaveBeenCalledWith({ owner: "hiimbex", repo: "synclbls" });
+    expect(addLabelsMock).toHaveBeenCalledWith({ labels: ["sync-frawhide"] });
+  });
 
   test("skips adding labels if PR has nosync label", async () => {
-    const payloadWithNosync = {
-      ...pullRequestPayload,
-      pull_request: {
-        ...pullRequestPayload.pull_request,
-        labels: [{ name: "nosync" }],
+    const listLabelsMock = vi.fn();
+    const addLabelsMock = vi.fn();
+    const mockContext = {
+      payload: {
+        pull_request: {
+          number: 1,
+          base: { ref: "f40" },
+          labels: [{ name: "nosync" }],
+          user: { login: "testuser" }
+        },
+        action: "opened"
       },
-    };
+      octokit: {
+        issues: {
+          listLabelsForRepo: listLabelsMock,
+          addLabels: addLabelsMock
+        }
+      }
+    } as any;
+    const mockApp = { log: { debug: vi.fn() } } as any;
 
-    const mock = nock("https://api.github.com")
-      .get("/repos/hiimbex/testing-things/pulls/1/files")
-      .reply(200, []);
+    await handlePullRequestAutolabel(mockContext, mockApp);
 
-    await (probot as Probot).receive({ name: "pull_request", payload: payloadWithNosync } as any);
-
-    expect(mock.pendingMocks()).toStrictEqual([]);
+    expect(listLabelsMock).not.toHaveBeenCalled();
+    expect(addLabelsMock).not.toHaveBeenCalled();
   });
 
   test("skips adding labels if PR body contains nosync", async () => {
-    const payloadWithNosyncBody = {
-      ...pullRequestPayload,
-      pull_request: {
-        ...pullRequestPayload.pull_request,
-        body: "This PR has nosync in the body",
+    const listLabelsMock = vi.fn();
+    const addLabelsMock = vi.fn();
+    const mockContext = {
+      payload: {
+        pull_request: {
+          number: 1,
+          base: { ref: "f40" },
+          labels: [],
+          user: { login: "testuser" },
+          body: "This PR has nosync in the body"
+        },
+        action: "opened"
       },
-    };
+      octokit: {
+        issues: {
+          listLabelsForRepo: listLabelsMock,
+          addLabels: addLabelsMock
+        }
+      }
+    } as any;
+    const mockApp = { log: { debug: vi.fn() } } as any;
 
+    await handlePullRequestAutolabel(mockContext, mockApp);
+
+    expect(listLabelsMock).not.toHaveBeenCalled();
+    expect(addLabelsMock).not.toHaveBeenCalled();
+  });
+
+  test("handles issues.opened event", async () => {
+    const specContent = fs.readFileSync('test/anda-srpm-macros.spec', 'utf8');
+    const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
+      .get("/redirect/terra40/packages/anda-srpm-macros/spec/raw")
+      .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/redirected-real` })
+      .get("/redirected-real")
+      .reply(200, specContent);
+
+    const mockGithub = nock("https://api.github.com")
+      .get("/search/users?q=some_packager%40example.com%20in%3Aemail")
+      .reply(200, { items: [{ login: "someuser" }] })
+      .delete("/repos/hiimbex/testing-things/issues/1/assignees")
+      .reply(200, {})
+      .post("/repos/hiimbex/testing-things/issues/1/assignees")
+      .reply(200, {});
+
+    await (probot as Probot).receive({
+      name: "issues.opened",
+      payload: issuePayload
+    } as any);
+
+    mockMadoguchi.done();
+    mockGithub.done();
+  });
+
+  test("health endpoint returns version from package.json", () => {
+    const mockRouter = { get: vi.fn() };
+    const getRouter = vi.fn().mockReturnValue(mockRouter);
+    const mockApp = { on: vi.fn() };
+
+    myProbotApp(mockApp as any, { getRouter });
+
+    expect(getRouter).toHaveBeenCalledWith("/");
+    expect(mockRouter.get).toHaveBeenCalledWith('/health', expect.any(Function));
+
+    const handler = mockRouter.get.mock.calls[0][1];
+    const mockRes = { json: vi.fn() };
+
+    handler({}, mockRes);
+
+    expect(mockRes.json).toHaveBeenCalledWith({ version: pkg.version });
+  });
+
+  test("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
+    nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, { token: "test" })
+      .persist();
     const mock = nock("https://api.github.com")
-      .get("/repos/hiimbex/testing-things/pulls/1/files")
-      .reply(200, []);
+      .get("/repos/hiimbex/parallel-test/pulls/1/files")
+      .reply(200, [
+        { filename: "pkg1.spec", status: "modified" },
+        { filename: "pkg2.spec", status: "added" }
+      ])
+      .get("/repos/hiimbex/parallel-test/contents/pkg1.spec?ref=abc123")
+      .reply(200, { content: fs.readFileSync("./test/pkgs1.spec") })
+      .get("/repos/hiimbex/parallel-test/contents/pkg2.spec?ref=abc123")
+      .reply(200, { content: fs.readFileSync("./test/pkgs2.spec") })
+      .post("/repos/hiimbex/parallel-test/pulls/1/reviews")
+      .reply(200, {})
+      .delete("/repos/hiimbex/parallel-test/pulls/1/requested_reviewers")
+      .reply(200, {});
 
-    await (probot as Probot).receive({ name: "pull_request", payload: payloadWithNosyncBody } as any);
+    await (probot as Probot).receive({ name: "pull_request", payload: reviewRequestedPayload } as any);
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
