@@ -16,7 +16,7 @@ Provides:       fyra-srpm-macros = %{version}-%{release}
 BuildArch:      noarch
 
 %description
-%{summary}
+%{summary}.
 
 %prep
 %autosetup -n srpm-macros-%version

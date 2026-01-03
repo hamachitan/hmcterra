@@ -113,12 +113,8 @@ export async function handleIssues(context: Context<"issues.opened">, app: Probo
   let pkgerEmail;
   try {
     const res = await fetch(`${MADOGUCHI_BASE_URL}/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`);
-    if (!res.redirected) {
-      app.log.error(`expected redirection from mg, got ${res.status}: ${await res.text()}`);
-      return;
-    }
-    if (!res.ok) {
-      app.log.error(`mg err ${res.status}: ${await res.text()}`);
+    if (!res.redirected || !res.ok) {
+      app.log.error(`mg ${res.status}: ${await res.text()}`);
       return;
     }
 
