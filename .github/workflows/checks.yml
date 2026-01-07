@@ -17,17 +17,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22.20.0
-          cache: npm
+      - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm install
+        run: bun i
 
       - name: Run tests
-        run: npm test
+        run: bun run test
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
@@ -35,7 +31,7 @@ jobs:
           name: coverage-report
           path: coverage
 
-  eslint:
+  oxlint:
     runs-on: ubuntu-latest
     name: ESLint
 
@@ -43,15 +39,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22.20.0
-          cache: npm
+      - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm install eslint
+        run: bun i
 
       - name: Lint
-        run: npm run lint
+        run: bun lint
 
