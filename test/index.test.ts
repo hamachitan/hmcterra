@@ -27,13 +27,13 @@ const privateKey = fs.readFileSync(
 describe("My Probot app", () => {
   let probot: unknown;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     probot = new Probot({
       appId: 123,
       privateKey: privateKey,
       secret: "test",
     });
-    (probot as Probot).load(myProbotApp);
+    await (probot as Probot).load(myProbotApp);
   });
 
   beforeEach(() => {

@@ -14,10 +14,11 @@
   "scripts": {
     "build": "tsc",
     "start": "probot run ./lib/index.js",
-    "lint": "eslint",
+    "lint": "oxlint --type-aware --type-check",
     "test": "vitest --no-watch --coverage"
   },
   "dependencies": {
+    "oxlint": "^1.36.0",
     "probot": "^13.4.5"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
     "nock": "^14.0.5",
+    "oxlint-tsgolint": "^0.10.1",
     "smee-client": "^2.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.51.0",
