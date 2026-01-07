@@ -33,7 +33,7 @@ jobs:
 
   oxlint:
     runs-on: ubuntu-latest
-    name: ESLint
+    name: Oxlint
 
     steps:
       - name: Checkout code
