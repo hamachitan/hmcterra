@@ -18,7 +18,8 @@ async function getPackageInfo(specContent: string): Promise<{ name: string, vers
 
 export async function checkPackageExists(pkgName: string, version: string, release: string | number, satmBranch: string): Promise<boolean> {
   try {
-    const response = await fetch(`${MADOGUCHI_BASE_URL}/v4/terra${satmBranch}/packages/${pkgName}`);
+    const branch = gitBranch2SatmBranch(satmBranch);
+    const response = await fetch(`${MADOGUCHI_BASE_URL}/v4/terra${branch}/packages/${pkgName}`);
     if (!response.ok) return false;
 
     const pkg = await response.json();

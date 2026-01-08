@@ -3,6 +3,6 @@ dev:
     bun start
 
 test:
-    bun run test
+    bun test
 
 t: test
