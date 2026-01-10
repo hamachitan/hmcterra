@@ -1,64 +1,7 @@
 import { describe, beforeEach, afterEach, test, expect, vi } from "vitest";
+import nock from "nock";
 import { checkReleaseBump, checkPackageExists } from '../src/lints/checkReleaseBump.js';
 import { MADOGUCHI_BASE_URL } from "../src/consts.js";
-
-// Bun-compatible HTTP mock helper
-class HttpMock {
-  private mocks: Map<string, { method: string; handler: (req: Request) => Response | Promise<Response> }> = new Map();
-
-  get(url: string, handler: (req: Request) => Response | Promise<Response>) {
-    this.mocks.set(`GET-${url}`, { method: "GET", handler });
-    return this;
-  }
-
-  reply(status: number, body: any, headers?: Record<string, string>) {
-    const entries = Array.from(this.mocks.entries());
-    if (entries.length > 0) {
-      const [key] = entries[entries.length - 1];
-      const mock = this.mocks.get(key)!;
-      mock.handler = () => new Response(JSON.stringify(body), {
-        status,
-        headers: { "Content-Type": "application/json", ...headers }
-      });
-    }
-    return this;
-  }
-
-  intercept() {
-    const originalFetch = globalThis.fetch;
-    const mocks = this.mocks;
-    
-    globalThis.fetch = new Proxy(originalFetch, {
-      apply: async (target, thisArg, args) => {
-        const [input, init] = args;
-        const url = input.toString();
-        const method = init?.method || "GET";
-        
-        const key = `${method}-${url}`;
-        const mock = mocks.get(key);
-        
-        if (mock) {
-          const req = new Request(url, init);
-          return mock.handler(req);
-        }
-        
-        return target.apply(thisArg, args);
-      }
-    }) as typeof fetch;
-
-    return this;
-  }
-
-  restore() {
-    if (globalThis.fetch && typeof (globalThis.fetch as any).restore === 'function') {
-      (globalThis.fetch as any).restore();
-    }
-  }
-}
-
-function createHttpMock() {
-  return new HttpMock();
-}
 
 const specContent = `Name:           test-package
 Version:        1.0.0
@@ -71,14 +14,22 @@ License:        MIT
 
 describe("checkReleaseBump", () => {
   beforeEach(() => {
-    // No need to disable net connect with Bun mock
+    nock.disableNetConnect();
   });
 
   afterEach(() => {
-    // Restore fetch if needed
+    nock.cleanAll();
+    nock.enableNetConnect();
   });
 
   test("processes PR with spec file that needs release bump", async () => {
+    const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
+      .get("/v4/terra40/packages/test-package")
+      .reply(200, {
+        ver: "1.0.0",
+        rel: "1.f40"
+      });
+
     const app = { log: { info: () => { }, error: () => { }, warn: () => { } } } as any;
     const file = { filename: 'test.spec', status: 'added' as const, sha: 'dummy' } as any;
     const context = {
@@ -105,46 +56,70 @@ describe("checkReleaseBump", () => {
     const result = await checkReleaseBump({ context, app, file, specContent });
     expect(result.messages).toEqual([]);
     expect(result.reviewComments).toHaveLength(0);
+    expect(context.octokit.repos.createOrUpdateFileContents).toHaveBeenCalled();
+    mockMadoguchi.done();
   });
 
-  test("returns empty when version and release match", async () => {
-    const mock = createHttpMock();
-    mock.get(`${MADOGUCHI_BASE_URL}/v4/terra40/packages/test-package`, () => 
-      new Response(JSON.stringify({ ver: "1.0.0", rel: "1.f40" }), { status: 200 })
-    );
-    mock.intercept();
-
-    const result = await checkPackageExists("test-package", "1.0.0", "1", "f40");
-
-    expect(result).toBe(true);
-    mock.restore();
-  });
 });
 
 describe("checkPackageExists", () => {
-  test("returns false when version differs", async () => {
-    const mock = createHttpMock();
-    mock.get(`${MADOGUCHI_BASE_URL}/v4/terra40/packages/test-package`, () => 
-      new Response(JSON.stringify({ ver: "1.0.0", rel: "1.f40" }), { status: 200 })
-    );
-    mock.intercept();
-
-    const result = await checkPackageExists("test-package", "2.0.0", "1", "f40");
-
-    expect(result).toBe(false);
-    mock.restore();
+  beforeEach(() => {
+    nock.disableNetConnect();
   });
 
-  test("returns false when release differs", async () => {
-    const mock = createHttpMock();
-    mock.get(`${MADOGUCHI_BASE_URL}/v4/terra40/packages/test-package`, () => 
-      new Response(JSON.stringify({ ver: "1.0.0", rel: "1.f40" }), { status: 200 })
-    );
-    mock.intercept();
+  afterEach(() => {
+    nock.cleanAll();
+    nock.enableNetConnect();
+  });
 
-    const result = await checkPackageExists("test-package", "1.0.0", "2", "f40");
+  test("checkPackageExists returns true when version and release match", async () => {
+    const mock = nock(MADOGUCHI_BASE_URL)
+      .get("/v4/terrarawhide/packages/anda")
+      .reply(200, {
+        "arch": "aarch64",
+        "dirs": "anda/tools/buildsys/anda",
+        "name": "anda",
+        "rel": "1.fcrawhide",
+        "repo": "terrarawhide",
+        "ver": "0.4.14"
+      });
 
+    const result = await checkPackageExists("anda", "0.4.14", "1", "rawhide");
+    expect(result).toBe(true);
+    mock.done();
+  });
+
+  test("checkPackageExists returns false when version differs", async () => {
+    const mock = nock(MADOGUCHI_BASE_URL)
+      .get("/v4/terrarawhide/packages/anda")
+      .reply(200, {
+        "arch": "aarch64",
+        "dirs": "anda/tools/buildsys/anda",
+        "name": "anda",
+        "rel": "1.fcrawhide",
+        "repo": "terrarawhide",
+        "ver": "0.4.14"
+      });
+
+    const result = await checkPackageExists("anda", "0.4.15", "1", "rawhide");
     expect(result).toBe(false);
-    mock.restore();
+    mock.done();
+  });
+
+  test("checkPackageExists returns false when release differs", async () => {
+    const mock = nock(MADOGUCHI_BASE_URL)
+      .get("/v4/terrarawhide/packages/anda")
+      .reply(200, {
+        "arch": "aarch64",
+        "dirs": "anda/tools/buildsys/anda",
+        "name": "anda",
+        "rel": "1.fcrawhide",
+        "repo": "terrarawhide",
+        "ver": "0.4.14"
+      });
+
+    const result = await checkPackageExists("anda", "0.4.14", "2", "rawhide");
+    expect(result).toBe(false);
+    mock.done();
   });
 });

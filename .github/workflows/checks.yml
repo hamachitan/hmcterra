@@ -23,7 +23,7 @@ jobs:
         run: bun i
 
       - name: Run tests
-        run: bun test
+        run: bun run test
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v6

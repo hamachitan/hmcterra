@@ -1,9 +1,10 @@
 // you can import your modules
 // import index from '../src/index'
 
-import { describe, beforeAll, test, expect, vi } from "vitest";
+import { describe, beforeAll, beforeEach, afterEach, test, expect, vi } from "vitest";
+import nock from "nock";
 // requiring our app implementation
-import myProbotApp, { handlePullRequestAutolabel, handlePullRequestLint, handleIssues } from "../src/index.js";
+import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
 import { Probot } from "probot";
 import pkg from "../package.json";
 import { MADOGUCHI_BASE_URL } from "../src/consts.js";
@@ -23,77 +24,6 @@ const privateKey = fs.readFileSync(
   "utf-8",
 );
 
-// Bun-compatible HTTP mock helper
-class BunHttpMock {
-  private mocks: Map<string, { method: string; urlPattern: string; handler: (req: Request) => any }> = new Map();
-  private originalFetch: typeof globalThis.fetch;
-  private enabled: boolean = false;
-
-  constructor() {
-    this.originalFetch = globalThis.fetch;
-  }
-
-  post(url: string, handler: (req: Request) => any) {
-    this.mocks.set(`POST-${url}`, { method: "POST", urlPattern: url, handler });
-    return this;
-  }
-
-  get(url: string, handler: (req: Request) => any) {
-    this.mocks.set(`GET-${url}`, { method: "GET", urlPattern: url, handler });
-    return this;
-  }
-
-  delete(url: string, handler: (req: Request) => any) {
-    this.mocks.set(`DELETE-${url}`, { method: "DELETE", urlPattern: url, handler });
-    return this;
-  }
-
-  intercept() {
-    const mocks = this.mocks;
-    const originalFetch = this.originalFetch;
-    const self = this;
-    
-    self.enabled = true;
-    
-    globalThis.fetch = (async (input: URL | RequestInfo, init?: RequestInit): Promise<Response> => {
-      if (!self.enabled) {
-        return originalFetch(input, init);
-      }
-      
-      const url = input.toString();
-      const method = init?.method || "GET";
-      
-      // Try to find a matching mock
-      for (const mock of mocks.values()) {
-        if (mock.method === method && url.includes(mock.urlPattern)) {
-          const req = new Request(url, init);
-          const data = await mock.handler(req);
-          if (data instanceof Response) {
-            return data;
-          }
-          return new Response(JSON.stringify(data), {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-          });
-        }
-      }
-      
-      return originalFetch(input, init);
-    }) as typeof globalThis.fetch;
-
-    return this;
-  }
-
-  restore() {
-    this.enabled = false;
-    globalThis.fetch = this.originalFetch;
-  }
-}
-
-function createHttpMock() {
-  return new BunHttpMock();
-}
-
 describe("My Probot app", () => {
   let probot: unknown;
 
@@ -106,6 +36,11 @@ describe("My Probot app", () => {
     await (probot as Probot).load(myProbotApp);
   });
 
+  beforeEach(() => {
+    nock.cleanAll();
+    nock.disableNetConnect();
+  });
+
   test("skips PR targeting unsupported branch", async () => {
     const unsupportedPayload = {
       ...pullRequestPayload,
@@ -115,169 +50,48 @@ describe("My Probot app", () => {
       }
     };
 
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+        },
+      })
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, []);
+
     await (probot as Probot).receive({ name: "pull_request", payload: unsupportedPayload } as any);
-    // If we get here without error, the test passes
+
+    // should not make any API calls for unsupported branch
+    expect(mock.pendingMocks()).toStrictEqual(["POST https://api.github.com:443/app/installations/2/access_tokens", "GET https://api.github.com:443/repos/hiimbex/testing-things/pulls/1/files"]);
   });
 
   test("skips PR with no spec files", async () => {
-    const listFilesMock = vi.fn().mockResolvedValue({
-      data: [{ filename: "README.md", status: "modified" }]
-    });
-    const mockContext = {
-      payload: {
-        ...pullRequestPayload,
-        action: "opened"
-      },
-      octokit: {
-        pulls: { listFiles: listFilesMock }
-      },
-      pullRequest: vi.fn().mockReturnValue({
-        owner: "hiimbex",
-        repo: "testing-things",
-        pull_number: 1
+    const mock = nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, {
+        token: "test",
+        permissions: {
+          pulls: "read",
+        },
       })
-    } as any;
-    const mockApp = { log: { debug: vi.fn(), info: vi.fn(), error: vi.fn(), warn: vi.fn(), trace: vi.fn() } } as any;
+      .persist()
+      .get("/repos/hiimbex/testing-things/pulls/1/files")
+      .reply(200, [
+        {
+          filename: "README.md",
+          status: "modified"
+        }
+      ])
+      .get("/repos/hiimbex/testing-things/labels")
+      .reply(200, [])
+      .post("/repos/hiimbex/testing-things/issues/1/labels")
+      .reply(200, []);
 
-    await handlePullRequestLint(mockContext, mockApp);
+    await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
 
-    expect(listFilesMock).toHaveBeenCalled();
-  });
-
-  test("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
-    const listFilesMock = vi.fn().mockResolvedValue({
-      data: [
-        { filename: "pkg1.spec", status: "modified" },
-        { filename: "pkg2.spec", status: "added" }
-      ]
-    });
-    const getContentMock = vi.fn().mockImplementation(({ path }) => {
-      if (path === "pkg1.spec") {
-        return { data: { content: Buffer.from("Name: pkg1\nVersion: 1.0\nRelease: 1\nSummary: test\nLicense: MIT\nPackager: test <test@example.com>").toString('base64') } };
-      }
-      return { data: { content: Buffer.from("Name: pkg2\nVersion: 2.0\nRelease: 1\nSummary: test2\nLicense: MIT\nPackager: test2 <test2@example.com>").toString('base64') } };
-    });
-    const createReviewMock = vi.fn().mockResolvedValue({});
-    const removeRequestedReviewersMock = vi.fn().mockResolvedValue({});
-    const mockContext = {
-      payload: reviewRequestedPayload,
-      octokit: {
-        pulls: {
-          listFiles: listFilesMock,
-          createReview: createReviewMock,
-          removeRequestedReviewers: removeRequestedReviewersMock
-        },
-        repos: { getContent: getContentMock }
-      },
-      pullRequest: vi.fn().mockImplementation((overrides) => ({
-        owner: "hiimbex",
-        repo: "parallel-test",
-        pull_number: 1,
-        ...overrides
-      })),
-      repo: vi.fn().mockImplementation((overrides) => ({
-        owner: "hiimbex",
-        repo: "parallel-test",
-        ...overrides
-      }))
-    } as any;
-    const mockApp = { log: { debug: vi.fn(), info: vi.fn(), error: vi.fn(), warn: vi.fn(), trace: vi.fn() } } as any;
-
-    await handlePullRequestLint(mockContext, mockApp);
-
-    expect(listFilesMock).toHaveBeenCalled();
-    expect(getContentMock).toHaveBeenCalledTimes(2);
-    expect(createReviewMock).toHaveBeenCalled();
-    expect(removeRequestedReviewersMock).toHaveBeenCalledWith({
-      owner: "hiimbex",
-      repo: "parallel-test",
-      pull_number: 1,
-      reviewers: ["hamachitan"]
-    });
-  });
-
-  test("handles issues.opened event", async () => {
-    const originalFetch = globalThis.fetch;
-    const createCommentMock = vi.fn().mockResolvedValue({});
-    const removeAssigneesMock = vi.fn().mockResolvedValue({});
-    const addAssigneesMock = vi.fn().mockResolvedValue({});
-
-    const specContent = `Name:           anda-srpm-macros
-Version:        0.2.29
-Release:        1%{?dist}
-Summary:        SRPM macros for extra Fedora packages
-License:        MIT
-Packager:       some packager <some_packager@example.com>
-BuildArch:      noarch
-
-%description
-%{summary}.
-
-%files
-`;
-
-    const fetchMock = vi.fn().mockImplementation((url: string) => {
-      if (url.includes('/redirect/terra40/packages/anda-srpm-macros/spec/raw')) {
-        const response = new Response(specContent, {
-          status: 200,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-        Object.defineProperty(response, 'redirected', { value: true, writable: false });
-        Object.defineProperty(response, 'url', { value: 'https://madoguchi.fyralabs.com/redirected-real', writable: false });
-        return Promise.resolve(response);
-      }
-      return Promise.resolve(new Response(specContent, { status: 200 }));
-    });
-    (globalThis as any).fetch = fetchMock;
-
-    const searchUsersMock = vi.fn().mockResolvedValue({
-      data: { items: [{ login: "someuser" }] }
-    });
-
-    const mockContext = {
-      payload: issuePayload,
-      octokit: {
-        issues: {
-          createComment: createCommentMock,
-          removeAssignees: removeAssigneesMock,
-          addAssignees: addAssigneesMock
-        },
-        search: { users: searchUsersMock }
-      },
-      issue: vi.fn().mockImplementation((overrides) => ({
-        owner: "hiimbex",
-        repo: "testing-things",
-        issue_number: 1,
-        ...overrides
-      }))
-    } as any;
-    const mockApp = { 
-      log: { 
-        debug: vi.fn(), 
-        info: vi.fn(), 
-        error: vi.fn(), 
-        warn: vi.fn(), 
-        trace: vi.fn() 
-      } 
-    } as any;
-
-    await handleIssues(mockContext, mockApp);
-
-    expect(createCommentMock).not.toHaveBeenCalled();
-    expect(removeAssigneesMock).toHaveBeenCalledWith({
-      owner: "hiimbex",
-      repo: "testing-things",
-      issue_number: 1,
-      assignees: ["hamachitan"]
-    });
-    expect(addAssigneesMock).toHaveBeenCalledWith({
-      owner: "hiimbex",
-      repo: "testing-things",
-      issue_number: 1,
-      assignees: ["someuser"]
-    });
-
-    (globalThis as any).fetch = originalFetch;
+    expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
   test("adds sync labels to opened PR", async () => {
@@ -368,37 +182,29 @@ BuildArch:      noarch
     expect(addLabelsMock).not.toHaveBeenCalled();
   });
 
-  test.skip("handles issues.opened event", async () => {
+  test("handles issues.opened event", async () => {
     const specContent = fs.readFileSync('test/anda-srpm-macros.spec', 'utf8');
-    
-    const mockMadoguchi = createHttpMock();
-    mockMadoguchi.get(`${MADOGUCHI_BASE_URL}/redirect/terra40/packages/anda-srpm-macros/spec/raw`, () => 
-      ({})
-    );
-    mockMadoguchi.get(`${MADOGUCHI_BASE_URL}/redirected-real`, () => 
-      (specContent)
-    );
-    mockMadoguchi.intercept();
+    const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
+      .get("/redirect/terra40/packages/anda-srpm-macros/spec/raw")
+      .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/redirected-real` })
+      .get("/redirected-real")
+      .reply(200, specContent);
 
-    const mockGithub = createHttpMock();
-    mockGithub.get("https://api.github.com/search/users?q=some_packager%40example.com%20in%3Aemail", () => 
-      ({ items: [{ login: "someuser" }] })
-    );
-    mockGithub.delete("https://api.github.com/repos/hiimbex/testing-things/issues/1/assignees", () => 
-      ({})
-    );
-    mockGithub.post("https://api.github.com/repos/hiimbex/testing-things/issues/1/assignees", () => 
-      ({})
-    );
-    mockGithub.intercept();
+    const mockGithub = nock("https://api.github.com")
+      .get("/search/users?q=some_packager%40example.com%20in%3Aemail")
+      .reply(200, { items: [{ login: "someuser" }] })
+      .delete("/repos/hiimbex/testing-things/issues/1/assignees")
+      .reply(200, {})
+      .post("/repos/hiimbex/testing-things/issues/1/assignees")
+      .reply(200, {});
 
     await (probot as Probot).receive({
       name: "issues.opened",
       payload: issuePayload
     } as any);
 
-    mockMadoguchi.restore();
-    mockGithub.restore();
+    mockMadoguchi.done();
+    mockGithub.done();
   });
 
   test("health endpoint returns version from package.json", () => {
@@ -419,33 +225,33 @@ BuildArch:      noarch
     expect(mockRes.json).toHaveBeenCalledWith({ version: pkg.version });
   });
 
-  test.skip("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
-    const mock = createHttpMock();
-    mock.post("https://api.github.com/app/installations/2/access_tokens", () => 
-      ({ token: "test" })
-    );
-    mock.get("https://api.github.com/repos/hiimbex/parallel-test/pulls/1/files", () => 
-      ({ data: [
+  test("executes lints in parallel for multiple spec files and removes reviewers on review_requested", async () => {
+    nock("https://api.github.com")
+      .post("/app/installations/2/access_tokens")
+      .reply(200, { token: "test" })
+      .persist();
+    const mock = nock("https://api.github.com")
+      .get("/repos/hiimbex/parallel-test/pulls/1/files")
+      .reply(200, [
         { filename: "pkg1.spec", status: "modified" },
         { filename: "pkg2.spec", status: "added" }
-      ]})
-    );
-    mock.get("https://api.github.com/repos/hiimbex/parallel-test/contents/pkg1.spec?ref=abc123", () => 
-      ({ content: Buffer.from("Name: pkg1\nVersion: 1.0\nRelease: 1\nSummary: test\nLicense: MIT\nPackager: test <test@example.com>").toString('base64') })
-    );
-    mock.get("https://api.github.com/repos/hiimbex/parallel-test/contents/pkg2.spec?ref=abc123", () => 
-      ({ content: Buffer.from("Name: pkg2\nVersion: 2.0\nRelease: 1\nSummary: test2\nLicense: MIT\nPackager: test2 <test2@example.com>").toString('base64') })
-    );
-    mock.post("https://api.github.com/repos/hiimbex/parallel-test/pulls/1/reviews", () => 
-      ({ data: {} })
-    );
-    mock.delete("https://api.github.com/repos/hiimbex/parallel-test/pulls/1/requested_reviewers", () => 
-      ({ data: {} })
-    );
-    mock.intercept();
+      ])
+      .get("/repos/hiimbex/parallel-test/contents/pkg1.spec?ref=abc123")
+      .reply(200, { content: fs.readFileSync("./test/pkgs1.spec") })
+      .get("/repos/hiimbex/parallel-test/contents/pkg2.spec?ref=abc123")
+      .reply(200, { content: fs.readFileSync("./test/pkgs2.spec") })
+      .post("/repos/hiimbex/parallel-test/pulls/1/reviews")
+      .reply(200, {})
+      .delete("/repos/hiimbex/parallel-test/pulls/1/requested_reviewers")
+      .reply(200, {});
 
     await (probot as Probot).receive({ name: "pull_request", payload: reviewRequestedPayload } as any);
 
-    mock.restore();
+    expect(mock.pendingMocks()).toStrictEqual([]);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    nock.enableNetConnect();
   });
 });
