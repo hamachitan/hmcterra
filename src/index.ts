@@ -89,7 +89,7 @@ export async function handlePullRequestLint(context: Context<"pull_request">, ap
   }
 }
 
-export async function handleIssues(context: Context<"issues.opened">, app: Probot) {
+export async function handleIssues(context: Context<"issues.opened" | "issues.reopened">, app: Probot) {
   if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
 
   const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
@@ -167,7 +167,7 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => 
     await handlePullRequestLint(context, app);
   });
 
-  app.on(["issues.opened"], async context => {
+  app.on(["issues.opened", "issues.reopened"], async context => {
     await handleIssues(context, app);
   });
 };
