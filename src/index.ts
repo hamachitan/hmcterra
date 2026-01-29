@@ -14,6 +14,7 @@ export async function handlePullRequestAutolabel(context: Context<"pull_request"
   if (context.payload.pull_request.labels.some(lbl => lbl.name === "nosync")) return;
   if (context.payload.pull_request.user.login === "raboneko") return;
   if (/\bnosync\b/.test(context.payload.pull_request.body ?? "")) return;
+  if (context.payload.pull_request.body?.startsWith("# Backport\n")) return;
 
   let last = syncsCache.isExpired();
   do { // repeat max twice
