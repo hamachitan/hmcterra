@@ -3,8 +3,9 @@ import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.js";
 import { getGithubUsernameFromEmail } from "./utils/github.js";
 import { runRpmspec } from "./utils/rpm.js";
 import { lints } from "./linting.js";
-import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
+import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL, commandRegex } from "./consts.js";
 import { readFileSync } from "fs";
+import processCommands from "./command.js";
 
 const SYNCS_CACHE_EXPIRE = 12 * 60 * 60 * 1000; // 12 hours in ms
 let syncsCache = { syncs: [''], timestamp: 0, isExpired: () => process.env.VITEST === 'true' || Date.now() - syncsCache.timestamp >= SYNCS_CACHE_EXPIRE };
@@ -150,9 +151,19 @@ export async function handleIssues(context: Context<"issues.opened" | "issues.re
   await context.octokit.issues.addAssignees(context.issue({ assignees: [githubUsername] }));
 }
 
+export async function handleIssueComment(context: Context<"issue_comment.created">, app: Probot) {
+  if (context.isBot) return;
+  const matches = Array.from(context.payload.comment.body.matchAll(commandRegex));
+  if (matches.length) {
+    await processCommands(matches.map(m => m[2]), context, app);
+  }
+}
+
 const { version } = JSON.parse(readFileSync("package.json").toString());
 
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
+  const isServeRepo = (repo: string) => repo === ((process.env['NODE_ENV'] == 'production') ? 'terrapkg/packages' : 'hamachitan/terra-test');
+
   if (getRouter) {
     const router = getRouter("/");
     router.get('/health', (_, res) => {
@@ -161,14 +172,22 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => 
   }
 
   app.on(["pull_request.opened", "pull_request.reopened"], async context => {
+    if (!isServeRepo(context.payload.repository.full_name)) return;
     await handlePullRequestAutolabel(context, app);
   });
 
   app.on(["pull_request.opened", "pull_request.review_requested", "pull_request.reopened"], async context => {
+    if (!isServeRepo(context.payload.repository.full_name)) return;
     await handlePullRequestLint(context, app);
   });
 
   app.on(["issues.opened", "issues.reopened"], async context => {
+    if (!isServeRepo(context.payload.repository.full_name)) return;
     await handleIssues(context, app);
   });
+
+  app.on(["issue_comment.created"], async context => {
+    if (!isServeRepo(context.payload.repository.full_name)) return;
+    await handleIssueComment(context, app);
+  })
 };
