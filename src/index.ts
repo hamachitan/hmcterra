@@ -153,10 +153,11 @@ export async function handleIssues(context: Context<"issues.opened" | "issues.re
 
 export async function handleIssueComment(context: Context<"issue_comment.created">, app: Probot) {
   if (context.isBot) return;
-  const matches = Array.from(context.payload.comment.body.matchAll(commandRegex));
-  if (matches.length) {
-    await processCommands(matches.map(m => m[2]), context, app);
-  }
+  const invocations = context.payload.comment.body.split('\n').map(l => l.trim())
+    .filter(l => l.startsWith('@hamachitan ') || l.startsWith('hmct '))
+    .map(l => l.replace(/^(@hamachitan|hmct) /, '').trimStart());
+  if (invocations.length)
+    await processCommands(invocations, context, app);
 }
 
 const { version } = JSON.parse(readFileSync("package.json").toString());
