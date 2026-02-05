@@ -3,7 +3,7 @@ import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.js";
 import { getGithubUsernameFromEmail } from "./utils/github.js";
 import { runRpmspec } from "./utils/rpm.js";
 import { lints } from "./linting.js";
-import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL, commandRegex } from "./consts.js";
+import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 import { readFileSync } from "fs";
 import processCommands from "./command.js";
 
@@ -163,7 +163,7 @@ export async function handleIssueComment(context: Context<"issue_comment.created
 const { version } = JSON.parse(readFileSync("package.json").toString());
 
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
-  const isServeRepo = (repo: string) => repo === ((process.env['NODE_ENV'] == 'production') ? 'terrapkg/packages' : 'hamachitan/terra-test');
+  const isServeRepo = (repo: string) => repo === ((process.env['NODE_ENV'] === 'production') ? 'terrapkg/packages' : 'hamachitan/terra-test');
 
   if (getRouter) {
     const router = getRouter("/");

@@ -100,7 +100,7 @@ async function processCommands(cmds: string[], ctx: Context<'issue_comment.creat
     ...cmds.map(s => new Invocation(s).exec(ctx, app))
   ]);
   msgs.shift(); // reactions.createForIssueComment
-  const body = msgs.filter(msg => msg != '').join("\n\n");
+  const body = msgs.filter(msg => msg !== '').join("\n\n");
   if (body === '') return;
   await ctx.octokit.issues.createComment(ctx.issue({ body }));
 }

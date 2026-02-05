@@ -46,6 +46,11 @@ describe("checkReleaseBump", () => {
         installation: { id: 2 }
       },
       octokit: {
+        issues: {
+          listLabelsForRepo: vi.fn().mockResolvedValue({
+            data: [{ name: 'sync-f40' }, { name: 'sync-frawhide' }]
+          })
+        },
         repos: {
           createOrUpdateFileContents: vi.fn().mockResolvedValue({})
         }
