@@ -6,9 +6,8 @@ import { lints } from "./linting.js";
 import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
 import { readFileSync } from "fs";
 import processCommands from "./command.js";
-
-const SYNCS_CACHE_EXPIRE = 12 * 60 * 60 * 1000; // 12 hours in ms
-let syncsCache = { syncs: [''], timestamp: 0, isExpired: () => process.env.VITEST === 'true' || Date.now() - syncsCache.timestamp >= SYNCS_CACHE_EXPIRE };
+import { getOrgMembers } from "./utils/orgMembersCache.js";
+import { getSyncLabels } from "./utils/syncsCache.js";
 
 export async function handlePullRequestAutolabel(context: Context<"pull_request">, app: Probot) {
   if (!isProdBranch(context.payload.pull_request.base.ref)) return;
@@ -17,22 +16,10 @@ export async function handlePullRequestAutolabel(context: Context<"pull_request"
   if (/\bnosync\b/.test(context.payload.pull_request.body ?? "")) return;
   if (context.payload.pull_request.body?.startsWith("# Backport\n")) return;
 
-  let last = syncsCache.isExpired();
-  do { // repeat max twice
-    try {
-      let syncs: string[];
-      if (syncsCache.isExpired()) {
-        const labels = await context.octokit.issues.listLabelsForRepo(context.repo());
-        syncs = labels.data.map(lbl => lbl.name).filter((name: string) => name.startsWith("sync-"));
-        syncsCache = { ...syncsCache, syncs, timestamp: Date.now() };
-      } else syncs = syncsCache.syncs;
-      app.log.debug(`labelling #${context.payload.pull_request.number}`);
-      await context.octokit.issues.addLabels(context.issue({ labels: syncs }));
-    } catch (err) {
-      app.log.error(`fail to autoassign labels: ${err}`);
-      syncsCache.timestamp = 0;
-    }
-  } while (!last && (last = syncsCache.isExpired()))
+  const syncs = await getSyncLabels(context, app);
+  if (syncs.length === 0) return;
+  app.log.debug(`labelling #${context.payload.pull_request.number}`);
+  await context.octokit.issues.addLabels(context.issue({ labels: syncs }));
 }
 
 export async function handlePullRequestLint(context: Context<"pull_request">, app: Probot) {
@@ -91,18 +78,8 @@ export async function handlePullRequestLint(context: Context<"pull_request">, ap
   }
 }
 
-export async function handleIssues(context: Context<"issues.opened" | "issues.reopened">, app: Probot) {
-  if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
-
+async function handleIssueAssignment(context: Context<"issues.opened" | "issues.reopened" | "issue_comment.created">, app: Probot, pkgname: string) {
   const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
-  const pkgname = matches?.at(1);
-  if (!pkgname) {
-    app.log.warn(`cannot detect pkgname, matches: ${matches}`);
-    app.log.trace(`issue body: ${context.payload.issue.body}`);
-    await context.octokit.issues.createComment(context.issue({ body: "Cannot detect pkgname." }));
-    return;
-  }
-
   const relver = mdRelverRegex.exec(context.payload.issue.body ?? '')?.at(1);
   if (!relver) {
     app.log.warn(`cannot detect relver, matches: ${matches}`);
@@ -151,8 +128,36 @@ export async function handleIssues(context: Context<"issues.opened" | "issues.re
   await context.octokit.issues.addAssignees(context.issue({ assignees: [githubUsername] }));
 }
 
+export async function handleIssues(context: Context<"issues.opened" | "issues.reopened" | "issues.edited">, app: Probot) {
+  if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
+
+  const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
+  const pkgname = matches?.at(1);
+  if (!pkgname) {
+    app.log.warn(`cannot detect pkgname, matches: ${matches}`);
+    app.log.trace(`issue body: ${context.payload.issue.body}`);
+    await context.octokit.issues.createComment(context.issue({ body: "Cannot detect pkgname." }));
+    return;
+  }
+
+  await handleIssueAssignment(context, app, pkgname);
+}
+
 export async function handleIssueComment(context: Context<"issue_comment.created">, app: Probot) {
   if (context.isBot) return;
+  const senderLogin = context.payload.sender.login;
+  const orgLogin = context.payload.repository.owner.login;
+  const orgMembers = await getOrgMembers(context, app, orgLogin);
+  if (!orgMembers.includes(senderLogin)) return;
+
+  if (!context.payload.issue.pull_request) {
+    const issueMatch = /^@hamachitan (.+)-([^-]+)-([^\-\s]+)$/.exec(context.payload.comment.body.trim());
+    if (issueMatch) {
+      await handleIssueAssignment(context, app, issueMatch[1]);
+      return;
+    }
+  }
+
   const invocations = context.payload.comment.body.split('\n').map(l => l.trim())
     .filter(l => l.startsWith('@hamachitan ') || l.startsWith('hmct '))
     .map(l => l.replace(/^(@hamachitan|hmct) /, '').trimStart());
@@ -182,7 +187,7 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => 
     await handlePullRequestLint(context, app);
   });
 
-  app.on(["issues.opened", "issues.reopened"], async context => {
+  app.on(["issues.opened", "issues.reopened", "issues.edited"], async context => {
     if (!isServeRepo(context.payload.repository.full_name)) return;
     await handleIssues(context, app);
   });

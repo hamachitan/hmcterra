@@ -1,5 +1,5 @@
 {
-  "action": "opened",
+  "action": "edited",
   "issue": {
     "number": 1,
     "assignee": {
