@@ -1,6 +1,7 @@
 import { checkReleaseBump } from "./lints/checkReleaseBump.js";
 import { checkPackager } from "./lints/checkPackager.js";
 import { checkChangelog } from "./lints/checkChangelog.js";
+import { requestPackagerReview } from "./lints/requestPackagerReview.js";
 import { Context, Probot } from "probot";
 
 export interface CheckResult {
@@ -36,5 +37,9 @@ export const lints: LintFunction[] = [
   {
     name: "changelog",
     check: checkChangelog,
+  },
+  {
+    name: "packagerReview",
+    check: requestPackagerReview,
   },
 ];
