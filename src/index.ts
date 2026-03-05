@@ -8,6 +8,8 @@ import { readFileSync } from "fs";
 import processCommands from "./command.js";
 import { getOrgMembers } from "./utils/orgMembersCache.js";
 import { getSyncLabels } from "./utils/syncsCache.js";
+import { ciLints } from "./ci_linting.js";
+import { tailMatchingLines } from "./utils/logReader.js";
 
 export async function handlePullRequestAutolabel(context: Context<"pull_request">, app: Probot) {
   if (!isProdBranch(context.payload.pull_request.base.ref)) return;
@@ -91,9 +93,11 @@ async function handleIssueAssignment(context: Context<"issues.opened" | "issues.
   const satmBranch = gitBranch2SatmBranch(relver);
   let pkgerEmail;
   try {
-    const res = await fetch(`${MADOGUCHI_BASE_URL}/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`);
+    const url = `${MADOGUCHI_BASE_URL}/redirect/terra${satmBranch}/packages/${pkgname}/spec/raw`;
+    const res = await fetch(url);
     if (!res.redirected || !res.ok) {
-      app.log.error(`mg ${res.status}: ${await res.text()}`);
+      app.log.error(`mg ${url}: ${res.status}: ${await res.text()}`);
+      await context.octokit.issues.createComment(context.issue({ body: `🛑 The package \`${pkgname}\` cannot be found in \`terra${satmBranch}\` [mg ${res.status}].` }));
       return;
     }
 
@@ -132,7 +136,7 @@ export async function handleIssues(context: Context<"issues.opened" | "issues.re
   if (context.payload.issue.assignee?.login !== HAMACHITAN_USERNAME) return;
 
   const matches = mdFullPkgNameRegex.exec(context.payload.issue.body ?? '');
-  const pkgname = matches?.at(1);
+  const pkgname = matches?.at(2);
   if (!pkgname) {
     app.log.warn(`cannot detect pkgname, matches: ${matches}`);
     app.log.trace(`issue body: ${context.payload.issue.body}`);
@@ -165,6 +169,62 @@ export async function handleIssueComment(context: Context<"issue_comment.created
     await processCommands(invocations, context, app);
 }
 
+function getJobArchFromName(name: string): string | null {
+  const match = /\(([^)]+)\)/.exec(name);
+  if (!match) return null;
+  const parts = match[1].split(',');
+  if (parts.length < 2) return null;
+  return parts[1].trim();
+}
+
+function isBuildJob(name: string): boolean {
+  return name.startsWith("build ");
+}
+
+function didAllBuildJobsFail(jobs: Array<{ name: string; conclusion: string | null }>): boolean {
+  const buildJobs = jobs.filter(job => isBuildJob(job.name));
+  if (buildJobs.length === 0) return false;
+  return buildJobs.every(job => job.conclusion === "failure");
+}
+
+async function handleWorkflowRunCompleted(context: Context<"workflow_run.completed">, app: Probot) {
+  if (context.payload.workflow.name !== "Automatically build packages") return;
+  if (context.payload.workflow_run.pull_requests.length === 0) return;
+
+  const { data: jobsData } = await context.octokit.actions.listJobsForWorkflowRun(context.repo({
+    run_id: context.payload.workflow_run.id,
+  }));
+
+  if (!didAllBuildJobsFail(jobsData.jobs)) return;
+
+  const buildJobs = jobsData.jobs.filter(job => isBuildJob(job.name));
+  const preferredJob = buildJobs.find(job => getJobArchFromName(job.name) === "x86_64") ?? buildJobs[0];
+  if (!preferredJob) return;
+
+  const logsResponse = await context.octokit.actions.downloadJobLogsForWorkflowRun(context.repo({
+    job_id: preferredJob.id,
+  }));
+
+  const logs = await tailMatchingLines(logsResponse.data as unknown as NodeJS.ReadableStream, 200);
+
+  for (const pr of context.payload.workflow_run.pull_requests) {
+    const results = await Promise.all(
+      ciLints.map(lint => lint.check({
+        context,
+        app,
+        logs,
+        pullRequest: { number: pr.number },
+      }))
+    );
+    const comments = results.flatMap(r => r.comments);
+    if (comments.length === 0) continue;
+    await context.octokit.issues.createComment(context.repo({
+      issue_number: pr.number,
+      body: comments.join("\n\n"),
+    }));
+  }
+}
+
 const { version } = JSON.parse(readFileSync("package.json").toString());
 
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
@@ -195,5 +255,10 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => 
   app.on(["issue_comment.created"], async context => {
     if (!isServeRepo(context.payload.repository.full_name)) return;
     await handleIssueComment(context, app);
+  })
+
+  app.on(["workflow_run.completed"], async context => {
+    if (!isServeRepo(context.payload.repository.full_name)) return;
+    await handleWorkflowRunCompleted(context, app);
   })
 };
