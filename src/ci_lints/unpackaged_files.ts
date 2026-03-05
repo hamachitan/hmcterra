@@ -4,10 +4,10 @@ const markerLine = "    Installed (but unpackaged) file(s) found:";
 
 export async function unpackagedFiles({ logs }: CILintParams): Promise<CICheckResult> {
   for (let i = 0; i < logs.length - 1; i += 1) {
-    if (logs[i] !== "" || logs[i + 1] !== markerLine) continue;
+    if (logs[i] !== markerLine) continue;
 
     const filepaths: string[] = [];
-    for (let j = i + 2; j < logs.length; j += 1) {
+    for (let j = i + 1; j < logs.length; j++) {
       const line = logs[j];
       if (!line.startsWith("   /")) break;
       filepaths.push(line.slice(3));

@@ -205,7 +205,7 @@ async function handleWorkflowRunCompleted(context: Context<"workflow_run.complet
     job_id: preferredJob.id,
   }));
 
-  const logs = await tailMatchingLines(logsResponse.data as unknown as NodeJS.ReadableStream, 200);
+  const logs = await tailMatchingLines(logsResponse.data as unknown as NodeJS.ReadableStream, 500);
 
   for (const pr of context.payload.workflow_run.pull_requests) {
     const results = await Promise.all(
@@ -216,6 +216,7 @@ async function handleWorkflowRunCompleted(context: Context<"workflow_run.complet
         pullRequest: { number: pr.number },
       }))
     );
+    console.log(results);
     const comments = results.flatMap(r => r.comments);
     if (comments.length === 0) continue;
     await context.octokit.issues.createComment(context.repo({
