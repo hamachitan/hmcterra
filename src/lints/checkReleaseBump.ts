@@ -41,7 +41,8 @@ async function checkPackageExistsInAnyBranch(pkgName: string, version: string, r
 
 export async function checkReleaseBump({ context, app, file, specContent }: LintParams): Promise<CheckResult> {
   const result: CheckResult = { messages: [], reviewComments: [] };
-  if (context.payload.pull_request.body?.match(/\bnobump\b/)?.length ?? 0 > 0) return result;
+  const prBody = context.payload.pull_request.body ?? "";
+  if (/\bnobump\b/.test(prBody)) return result;
 
   const pkgInfo = await getPackageInfo(specContent);
   if (!pkgInfo) {
