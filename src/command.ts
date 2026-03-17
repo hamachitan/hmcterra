@@ -95,13 +95,20 @@ export class Invocation {
 }
 
 async function processCommands(cmds: string[], ctx: Context<'issue_comment.created'>, app: Probot) {
-  const msgs = await Promise.all([
-    ctx.octokit.reactions.createForIssueComment(ctx.repo({ comment_id: ctx.payload.comment.id, content: "rocket" })),
-    ...cmds.map(s => new Invocation(s).exec(ctx, app))
-  ]);
-  msgs.shift(); // reactions.createForIssueComment
-  const body = msgs.filter(msg => msg !== '').join("\n\n");
-  if (body === '') return;
-  await ctx.octokit.issues.createComment(ctx.issue({ body }));
+  try {
+    const msgs = await Promise.all([
+      ctx.octokit.reactions.createForIssueComment(ctx.repo({ comment_id: ctx.payload.comment.id, content: "rocket" })),
+      ...cmds.map(s => new Invocation(s).exec(ctx, app))
+    ]);
+    msgs.shift(); // reactions.createForIssueComment
+    const body = msgs.filter(msg => msg !== '').join("\n\n");
+    if (body === '') return;
+    await ctx.octokit.issues.createComment(ctx.issue({ body }));
+  } catch (e) {
+    if (e instanceof Error)
+      await ctx.octokit.issues.createComment(ctx.issue({ body: `🛑 Fatal: ${e}` + "\n```\n" + e.stack + '\n```' }));
+    else
+      await ctx.octokit.issues.createComment(ctx.issue({ body: `🛑 Fatal: ${e}` }));
+  }
 }
 export default processCommands;

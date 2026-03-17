@@ -150,7 +150,8 @@ export async function handleIssues(context: Context<"issues.opened" | "issues.re
 export async function handleIssueComment(context: Context<"issue_comment.created">, app: Probot) {
   if (context.isBot) return;
   const senderLogin = context.payload.sender.login;
-  const orgLogin = context.payload.repository.owner.login;
+  // const orgLogin = context.payload.repository.owner.login;
+  const orgLogin = "terrapkg";
   const orgMembers = await getOrgMembers(context, app, orgLogin);
   if (!orgMembers.includes(senderLogin)) return;
 
@@ -216,7 +217,6 @@ async function handleWorkflowRunCompleted(context: Context<"workflow_run.complet
         pullRequest: { number: pr.number },
       }))
     );
-    console.log(results);
     const comments = results.flatMap(r => r.comments);
     if (comments.length === 0) continue;
     await context.octokit.issues.createComment(context.repo({
