@@ -5,7 +5,7 @@
     "assignee": {
       "login": "hamachitan"
     },
-    "body": "### Full Package Name\n\nanda-srpm-macros-0.2.29-1.fc40.noarch\n\n### Release Version\n\n40"
+    "body": "### Full Raw Package Name (e.g. anda-0.4.14-1.fcrawhide.x86_64)\n\nanda-srpm-macros-0.2.29-1.fc40.noarch\n\n### Release Version\n\n40"
   },
   "repository": {
     "owner": {
