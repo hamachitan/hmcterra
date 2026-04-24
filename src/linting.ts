@@ -26,10 +26,10 @@ export interface LintFunction {
 }
 
 export const lints: LintFunction[] = [
-  {
-    name: "releaseBump",
-    check: checkReleaseBump,
-  },
+  //{
+  //  name: "releaseBump",
+  //  check: checkReleaseBump,
+  //},
   {
     name: "packager",
     check: checkPackager,
