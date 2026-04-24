@@ -1,4 +1,3 @@
-import { checkReleaseBump } from "./lints/checkReleaseBump.js";
 import { checkPackager } from "./lints/checkPackager.js";
 import { checkChangelog } from "./lints/checkChangelog.js";
 import { requestPackagerReview } from "./lints/requestPackagerReview.js";
