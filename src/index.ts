@@ -248,7 +248,7 @@ export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => 
     await handlePullRequestLint(context, app);
   });
 
-  app.on(["issues.opened", "issues.reopened", "issues.edited"], async context => {
+  app.on(["issues.opened", "issues.reopened"], async context => {
     if (!isServeRepo(context.payload.repository.full_name)) return;
     await handleIssues(context, app);
   });
