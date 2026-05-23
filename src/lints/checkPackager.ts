@@ -8,7 +8,7 @@ export async function checkPackager({ specContent, file, app }: LintParams): Pro
     const packager = await runRpmspec(specContent, '%{packager}');
     if (packager === '(none)') {
       return {
-        messages: [`🍣 The \`Packager: name <mail@example.com>\` preamble is missing in \`${file.filename}\`. This is required in our [policies](https://developer.fyralabs.com/terra/policies#packager-field).`],
+        messages: [`🍣 The \`Packager: name <mail@example.com>\` preamble is missing in \`${file.filename}\`. This is required in our [policies](https://docs.terrapkg.com/contributing/policies/#packager-field).`],
         reviewComments: []
       };
     }
