@@ -1,4 +1,4 @@
-import { CICheckResult, CILintParams } from "../ci_linting.js";
+import { CICheckResult, CILintParams } from "../ci_linting.ts";
 
 const markerLine = "    Installed (but unpackaged) file(s) found:";
 

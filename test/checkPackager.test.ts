@@ -1,12 +1,12 @@
 import { test, expect, vi } from "vitest";
-import { checkPackager } from '../src/lints/checkPackager.js';
-import { checkChangelog } from '../src/lints/checkChangelog.js';
+import { checkPackager } from '../src/lints/checkPackager.ts';
+import { checkChangelog } from '../src/lints/checkChangelog.ts';
 
-vi.mock('../src/utils/rpm.js', () => ({
+vi.mock('../src/utils/rpm.ts', () => ({
   runRpmspec: vi.fn()
 }));
 
-import { runRpmspec } from '../src/utils/rpm.js';
+import { runRpmspec } from '../src/utils/rpm.ts';
 
 const specContent = `Name:           test-package
 Version:        1.0.0

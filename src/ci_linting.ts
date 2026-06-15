@@ -16,7 +16,7 @@ export interface CILintFunction {
   check: (_params: CILintParams) => Promise<CICheckResult>;
 }
 
-import { unpackagedFiles } from "./ci_lints/unpackaged_files.js";
+import { unpackagedFiles } from "./ci_lints/unpackaged_files.ts";
 
 export const ciLints: CILintFunction[] = [
   {

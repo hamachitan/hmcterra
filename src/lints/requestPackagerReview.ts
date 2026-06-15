@@ -1,6 +1,6 @@
-import { runRpmspec } from "../utils/rpm.js";
-import { CheckResult, LintParams } from "../linting.js";
-import { getGithubUsernameFromEmail } from "../utils/github.js";
+import { runRpmspec } from "../utils/rpm.ts";
+import { CheckResult, LintParams } from "../linting.ts";
+import { getGithubUsernameFromEmail } from "../utils/github.ts";
 
 const packagerEmailRegex = /^(.+)<(.+)>$/;
 

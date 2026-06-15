@@ -1,7 +1,7 @@
-import { runRpmspec } from "../utils/rpm.js";
-import { CheckResult } from "../linting.js";
+import { runRpmspec } from "../utils/rpm.ts";
+import { CheckResult } from "../linting.ts";
 
-import { LintParams } from "../linting.js";
+import { LintParams } from "../linting.ts";
 
 export async function checkPackager({ specContent, file, app }: LintParams): Promise<CheckResult> {
   try {

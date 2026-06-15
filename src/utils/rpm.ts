@@ -1,32 +1,10 @@
-import { spawn } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-
 export async function runRpmspec(specContent: string, queryFormat: string, extraArgs: string[] = []): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const tempDir = os.tmpdir();
-    let tempFile;
-    do {
-      tempFile = path.join(tempDir, `spec-${Date.now()}-${Math.random()}.spec`);
-    } while (fs.existsSync(tempFile));
-    fs.writeFileSync(tempFile, specContent);
+  const tempFile = await Deno.makeTempFile({ prefix: "spec-", suffix: ".spec" });
+  Deno.writeFile(tempFile, new TextEncoder().encode(specContent));
 
-    const child = spawn('rpmspec', ['-q', tempFile, '--undefine=dist', ...extraArgs, '--queryformat', queryFormat], { stdio: 'pipe' });
-    let stdout = '';
-    let stderr = '';
+  const child = await new Deno.Command('rpmspec', { args: ['-q', tempFile, '--undefine=dist', ...extraArgs, '--queryformat', queryFormat], stdout: 'piped', stderr: 'piped' }).output();
+  await Deno.remove(tempFile);
 
-    child.stdout.on('data', data => stdout += data.toString());
-    child.stderr.on('data', data => stderr += data.toString());
-
-    child.on('close', code => {
-      try {
-        fs.unlinkSync(tempFile);
-      } catch (_err) {
-        // ignore
-      }
-      if (code === 0) resolve(stdout.trim());
-      else reject(new Error(`rpmspec failed: ${stderr}`));
-    });
-  });
+  if (child.code === 0) return child.stdout.toString().trim();
+  throw new Error(`rpmspec failed: ${child.stderr.toString()}`);
 }

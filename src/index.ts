@@ -1,15 +1,15 @@
+import { run } from "npm:probot";
 import { ApplicationFunctionOptions, Context, Probot } from "probot";
-import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.js";
-import { getGithubUsernameFromEmail } from "./utils/github.js";
-import { runRpmspec } from "./utils/rpm.js";
-import { lints } from "./linting.js";
-import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.js";
-import { readFileSync } from "fs";
-import processCommands from "./command.js";
-import { getOrgMembers } from "./utils/orgMembersCache.js";
-import { getSyncLabels } from "./utils/syncsCache.js";
-import { ciLints } from "./ci_linting.js";
-import { tailMatchingLines } from "./utils/logReader.js";
+import { gitBranch2SatmBranch, isProdBranch } from "./utils/terrautil.ts";
+import { getGithubUsernameFromEmail } from "./utils/github.ts";
+import { runRpmspec } from "./utils/rpm.ts";
+import { lints } from "./linting.ts";
+import { mdFullPkgNameRegex, mdRelverRegex, HAMACHITAN_USERNAME, MADOGUCHI_BASE_URL } from "./consts.ts";
+import processCommands from "./command.ts";
+import { getOrgMembers } from "./utils/orgMembersCache.ts";
+import { getSyncLabels } from "./utils/syncsCache.ts";
+import { ciLints } from "./ci_linting.ts";
+import { tailMatchingLines } from "./utils/logReader.ts";
 
 export async function handlePullRequestAutolabel(context: Context<"pull_request">, app: Probot) {
   if (!isProdBranch(context.payload.pull_request.base.ref)) return;
@@ -226,7 +226,7 @@ async function handleWorkflowRunCompleted(context: Context<"workflow_run.complet
   }
 }
 
-const { version } = JSON.parse(readFileSync("package.json").toString());
+const { version } = JSON.parse(Deno.readTextFileSync("package.json"));
 
 export default (app: Probot, { getRouter }: ApplicationFunctionOptions = {}) => {
   const isServeRepo = (repo: string) => repo === ((process.env['NODE_ENV'] === 'production') ? 'terrapkg/packages' : 'hamachitan/terra-test');

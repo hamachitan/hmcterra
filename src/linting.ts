@@ -1,6 +1,6 @@
-import { checkPackager } from "./lints/checkPackager.js";
-import { checkChangelog } from "./lints/checkChangelog.js";
-import { requestPackagerReview } from "./lints/requestPackagerReview.js";
+import { checkPackager } from "./lints/checkPackager.ts";
+import { checkChangelog } from "./lints/checkChangelog.ts";
+import { requestPackagerReview } from "./lints/requestPackagerReview.ts";
 import { Context, Probot } from "probot";
 
 export interface CheckResult {

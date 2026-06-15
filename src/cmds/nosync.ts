@@ -1,6 +1,6 @@
 // vim: ts=2 sw=2
 import { Context, Probot } from "probot";
-import { Command } from "../command.js";
+import { Command } from "../command.ts";
 
 export default class NosyncCommand implements Command<{}> {
   flags = {};
