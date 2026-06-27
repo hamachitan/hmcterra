@@ -1,9 +1,9 @@
 // vim: ts=2 sw=2
 import { Context, Probot } from "probot";
-import { Command } from "../command.ts";
-import { runRpmspec } from "../utils/rpm.ts";
+import { Command } from "../command.js";
+import { runRpmspec } from "../utils/rpm.js";
 
-const changelogRegex = /^%changelog\s*$/;
+const changelogRegex = /^%changelog\s*$/m;
 
 export default class ChangelogCommand implements Command<{ print: string[] }> {
   flags = {
@@ -12,7 +12,10 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
 
   makeChangelogDateOnly(): string {
     const now = new Date(Date.now());
-    const weekday = now.getUTCDay(), mo = now.toLocaleDateString(undefined, { month: "short" }), day = String(now.getUTCDay()).padStart(2, '0'), yr = now.getUTCFullYear();
+    const weekday = now.toLocaleDateString(undefined, { weekday: "short" }),
+      mo = now.toLocaleDateString(undefined, { month: "short" }),
+      day = String(now.getUTCDay()).padStart(2, '0'),
+      yr = now.getUTCFullYear();
     return `* ${weekday} ${mo} ${day} ${yr}`;
   }
 
@@ -23,20 +26,21 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
   addChangelog(file: string, msg: string, pkger: string, verrel: string): string {
     const changelog = this.makeChangelog(pkger, msg, verrel);
     if (!changelogRegex.test(file)) {
-      return file.trimEnd() + changelog;
+      return file.trimEnd() + `\n\n%changelog\n${changelog}\n`;
     }
-    return file.replace(changelogRegex, `%changelog\n${changelog}`);
+    return file.trimEnd().replace(changelogRegex, `%changelog\n${changelog}\n`);
   }
 
-  getPackager(ctx: Context<'issue_comment.created'>): string {
+  async getPackager(ctx: Context<'issue_comment.created'>): Promise<string> {
     // not the packager of the spec, but the person who invoked the command!
-    return `${ctx.payload.sender.name} <${ctx.payload.sender.email ?? 'your.github.mail@is.private'}>`;
+    const email = ctx.payload.sender.email ?? (await ctx.octokit.users.getByUsername({ username: ctx.payload.sender.login })).data.email ?? 'your.github.mail@is.private';
+    return `${ctx.payload.sender.name ?? ctx.payload.sender.login} <${email}>`;
   }
 
   async exec(ctx: Context<'issue_comment.created'>, _: Probot, args: string[], flags: { print: (string | null)[] }): Promise<string> {
     const msg = args.join(' ');
-    if (flags.print.length) {
-      return "```rpmspec\n" + `${this.makeChangelogDateOnly()} ${this.getPackager(ctx)}\n- ${msg}` + "\n```";
+    if (flags.print?.length) {
+      return "```rpmspec\n" + `${this.makeChangelogDateOnly()} ${await this.getPackager(ctx)}\n- ${msg}` + "\n```";
     }
     const p = await ctx.octokit.pulls.get(ctx.pullRequest());
     const { data: files } = await ctx.octokit.pulls.listFiles(ctx.pullRequest());
@@ -55,7 +59,7 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
 
         const specContent = Buffer.from(fileContent.content, 'base64').toString('utf8');
         const verrel = (await runRpmspec(specContent, '%{version}-%{release}\n')).split('\n')[0];
-        const content = this.addChangelog(specContent, msg, this.getPackager(ctx), verrel);
+        const content = this.addChangelog(specContent, msg, await this.getPackager(ctx), verrel);
         const { data } = await ctx.octokit.git.createBlob(ctx.repo({ content }));
         return { path: file.filename, ...data };
       } catch (error) {
@@ -73,10 +77,15 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
       })),
       base_tree: headCommit.tree.sha,
     }));
-    await ctx.octokit.git.createCommit(ctx.repo({
+    const { data: commit } = await ctx.octokit.git.createCommit(ctx.repo({
       message: "chore: add changelogs",
       tree: data.sha,
       parents: [p.data.head.sha],
+    }));
+    await ctx.octokit.git.updateRef(ctx.repo({
+      ref: `heads/${p.data.head.ref}`,
+      sha: commit.sha,
+      force: false,
     }));
 
     return errors;
