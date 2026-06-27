@@ -12,7 +12,7 @@ export interface Command<Flags extends { [flag: string]: string[] }> {
 
 export const commands: { [cmdname: string]: Command<any> } = {
   nosync: new NosyncCommand(),
-  changlog: new ChangelogCommand(),
+  changelog: new ChangelogCommand(),
 };
 
 export interface InvokeErr {
