@@ -14,7 +14,7 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
     const now = new Date(Date.now());
     const weekday = now.toLocaleDateString(undefined, { weekday: "short" }),
       mo = now.toLocaleDateString(undefined, { month: "short" }),
-      day = String(now.getUTCDay()).padStart(2, '0'),
+      day = String(now.getUTCDate()).padStart(2, '0'),
       yr = now.getUTCFullYear();
     return `* ${weekday} ${mo} ${day} ${yr}`;
   }
