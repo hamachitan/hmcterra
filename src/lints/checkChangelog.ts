@@ -15,7 +15,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
       const packager = await runRpmspec(specContent, '%{packager}');
       if (packager === '(none)') return result;
 
-      const versionRelease = await runRpmspec(specContent, '%{version}-%{release}');
+      const versionRelease = (await runRpmspec(specContent, '%{version}-%{release}\n')).split('\n')[0];
       const date = new Date().toDateString();
 
       const replacement = `* ${date} ${packager} - ${versionRelease}\n- Initial package`;
@@ -45,7 +45,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
     const packager = (await runRpmspec(specContent, '%{packager}\n')).split('\n')[0];
     if (packager === '(none)') return result;
 
-    const versionRelease = await runRpmspec(specContent, '%{version}-%{release}');
+    const versionRelease = (await runRpmspec(specContent, '%{version}-%{release}\n')).split('\n')[0];
     const date = new Date().toDateString();
     let lastLine = lines[lines.length - 1] || '';
     if (lastLine !== '') lastLine += "\n";
