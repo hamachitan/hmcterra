@@ -1,16 +1,18 @@
 // vim: ts=2 sw=2
 import { Context, Probot } from "probot";
 import NosyncCommand from "./cmds/nosync.js";
+import ChangelogCommand from "./cmds/changelog.js";
 
 export interface Command<Flags extends { [flag: string]: string[] }> {
   flags: Flags;
-  exec: (ctx: Context<'issue_comment.created'>, bot: Probot, args: string[], flags: {
+  exec(ctx: Context<'issue_comment.created'>, bot: Probot, args: string[], flags: {
     [key in keyof Flags]: (string | null)[]
-  }) => Promise<string>;
+  }): Promise<string>;
 }
 
 export const commands: { [cmdname: string]: Command<any> } = {
   nosync: new NosyncCommand(),
+  changelog: new ChangelogCommand(),
 };
 
 export interface InvokeErr {
@@ -66,8 +68,8 @@ export class Invocation {
       } else if (word.startsWith('-')) {
         for (const ch of word.substring(1)) {
           let done = false;
-          for (const [flag, aliases] of commands[this.cmdname]?.flags ?? {}) {
-            if (aliases.includes(ch)) {
+          for (const flag in commands[this.cmdname]?.flags ?? {}) {
+            if (commands[this.cmdname].flags[flag].includes(ch)) {
               if (this.flags[flag] == null) this.flags[flag] = [];
               this.flags[flag].push(null);
               done = true;
