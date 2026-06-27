@@ -42,7 +42,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
   }
 
   try {
-    const packager = await runRpmspec(specContent, '%{packager}');
+    const packager = (await runRpmspec(specContent, '%{packager}\n')).split('\n')[0];
     if (packager === '(none)') return result;
 
     const versionRelease = await runRpmspec(specContent, '%{version}-%{release}');
