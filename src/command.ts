@@ -1,6 +1,7 @@
 // vim: ts=2 sw=2
 import { Context, Probot } from "probot";
-import NosyncCommand from "./cmds/nosync.js";
+import NosyncCommand from "./cmds/nosync.ts";
+import ChangelogCommand from "./cmds/changelog.ts";
 
 export interface Command<Flags extends { [flag: string]: string[] }> {
   flags: Flags;
@@ -11,6 +12,7 @@ export interface Command<Flags extends { [flag: string]: string[] }> {
 
 export const commands: { [cmdname: string]: Command<any> } = {
   nosync: new NosyncCommand(),
+  changlog: new ChangelogCommand(),
 };
 
 export interface InvokeErr {
