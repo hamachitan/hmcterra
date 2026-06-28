@@ -3,28 +3,28 @@
   "plugins": ["typescript"],
   "ignorePatterns": ["lib/**"],
   "categories": {
-    "correctness": "warn",
+    "correctness": "warn"
   },
   "rules": {
     "no-unused-vars": [
       "error",
-      { "argsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" },
+      { "argsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }
     ],
     "@typescript-eslint/no-unused-vars": [
       "error",
-      { "argsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" },
+      { "argsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }
     ],
     "arrow-body-style": ["warn", "as-needed"],
     "arrow-parens": ["warn", "as-needed"],
     "capitalized-comments": ["warn", "never"],
     "eqeqeq": ["error", "smart"],
-    "no-else-return": ["warn"],
+    "no-else-return": ["warn"]
   },
   "overrides": [
     {
       "files": ["test/**/*"],
       "rules": {
-        "@typescript-eslint/no-explicit-any": "off" 
+        "@typescript-eslint/no-explicit-any": "off"
       }
     }
   ]

@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import NosyncCommand from "../src/cmds/nosync.js";
 
 describe("NosyncCommand", () => {
@@ -10,8 +10,8 @@ describe("NosyncCommand", () => {
     mockOctokit = {
       issues: {
         listLabelsOnIssue: vi.fn(),
-        removeLabel: vi.fn()
-      }
+        removeLabel: vi.fn(),
+      },
     };
 
     mockCtx = {
@@ -20,8 +20,8 @@ describe("NosyncCommand", () => {
         owner: "hiimbex",
         repo: "testing-things",
         issue_number: 1,
-        ...overrides
-      }))
+        ...overrides,
+      })),
     };
 
     mockBot = {};
@@ -32,19 +32,21 @@ describe("NosyncCommand", () => {
       data: [
         { name: "sync-frawhide" },
         { name: "sync-f40" },
-        { name: "bug" }
-      ]
+        { name: "bug" },
+      ],
     });
     mockOctokit.issues.removeLabel.mockResolvedValue({});
 
     const cmd = new NosyncCommand();
     const result = await cmd.exec(mockCtx, mockBot, []);
 
-    expect(result).toBe('');
+    expect(result).toBe("");
     expect(mockOctokit.issues.listLabelsOnIssue).toHaveBeenCalled();
     expect(mockOctokit.issues.removeLabel).toHaveBeenCalledTimes(2);
 
-    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((call: any[]) => call[0].name);
+    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((
+      call: any[],
+    ) => call[0].name);
     expect(removedLabels).toContain("sync-frawhide");
     expect(removedLabels).toContain("sync-f40");
   });
@@ -54,18 +56,20 @@ describe("NosyncCommand", () => {
       data: [
         { name: "sync-frawhide" },
         { name: "sync-f40" },
-        { name: "bug" }
-      ]
+        { name: "bug" },
+      ],
     });
     mockOctokit.issues.removeLabel.mockResolvedValue({});
 
     const cmd = new NosyncCommand();
     const result = await cmd.exec(mockCtx, mockBot, ["frawhide"]);
 
-    expect(result).toBe('');
+    expect(result).toBe("");
     expect(mockOctokit.issues.removeLabel).toHaveBeenCalledTimes(1);
 
-    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((call: any[]) => call[0].name);
+    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((
+      call: any[],
+    ) => call[0].name);
     expect(removedLabels).toContain("sync-frawhide");
     expect(removedLabels).not.toContain("sync-f40");
   });
@@ -76,18 +80,20 @@ describe("NosyncCommand", () => {
         { name: "sync-frawhide" },
         { name: "sync-f40" },
         { name: "sync-f41" },
-        { name: "bug" }
-      ]
+        { name: "bug" },
+      ],
     });
     mockOctokit.issues.removeLabel.mockResolvedValue({});
 
     const cmd = new NosyncCommand();
     const result = await cmd.exec(mockCtx, mockBot, ["frawhide", "f41"]);
 
-    expect(result).toBe('');
+    expect(result).toBe("");
     expect(mockOctokit.issues.removeLabel).toHaveBeenCalledTimes(2);
 
-    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((call: any[]) => call[0].name);
+    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((
+      call: any[],
+    ) => call[0].name);
     expect(removedLabels).toContain("sync-frawhide");
     expect(removedLabels).toContain("sync-f41");
     expect(removedLabels).not.toContain("sync-f40");
@@ -98,18 +104,20 @@ describe("NosyncCommand", () => {
       data: [
         { name: "sync-frawhide" },
         { name: "sync-f40" },
-        { name: "bug" }
-      ]
+        { name: "bug" },
+      ],
     });
     mockOctokit.issues.removeLabel.mockResolvedValue({});
 
     const cmd = new NosyncCommand();
     const result = await cmd.exec(mockCtx, mockBot, ["frawhide"]);
 
-    expect(result).toBe('');
+    expect(result).toBe("");
     expect(mockOctokit.issues.removeLabel).toHaveBeenCalledTimes(1);
 
-    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((call: any[]) => call[0].name);
+    const removedLabels = mockOctokit.issues.removeLabel.mock.calls.map((
+      call: any[],
+    ) => call[0].name);
     expect(removedLabels).not.toContain("sync-f40");
     expect(removedLabels).not.toContain("bug");
   });
@@ -118,15 +126,15 @@ describe("NosyncCommand", () => {
     mockOctokit.issues.listLabelsOnIssue.mockResolvedValue({
       data: [
         { name: "sync-f40" },
-        { name: "bug" }
-      ]
+        { name: "bug" },
+      ],
     });
     mockOctokit.issues.removeLabel.mockResolvedValue({});
 
     const cmd = new NosyncCommand();
     const result = await cmd.exec(mockCtx, mockBot, ["nonexistent"]);
 
-    expect(result).toBe('');
+    expect(result).toBe("");
     expect(mockOctokit.issues.removeLabel).not.toHaveBeenCalled();
   });
 
@@ -134,15 +142,15 @@ describe("NosyncCommand", () => {
     mockOctokit.issues.listLabelsOnIssue.mockResolvedValue({
       data: [
         { name: "bug" },
-        { name: "enhancement" }
-      ]
+        { name: "enhancement" },
+      ],
     });
     mockOctokit.issues.removeLabel.mockResolvedValue({});
 
     const cmd = new NosyncCommand();
     const result = await cmd.exec(mockCtx, mockBot, []);
 
-    expect(result).toBe('');
+    expect(result).toBe("");
     expect(mockOctokit.issues.removeLabel).not.toHaveBeenCalled();
   });
 });

@@ -1,11 +1,12 @@
 import { ProbotOctokit } from "probot";
+import { Buffer } from "node:buffer";
 
 //? npm github-username
 
 async function searchCommits(octokit: ProbotOctokit, email: string) {
   const { data } = await octokit.search.commits({
     q: `author-email:${email}`,
-    sort: 'author-date',
+    sort: "author-date",
     per_page: 1,
   });
 
@@ -15,7 +16,10 @@ async function searchCommits(octokit: ProbotOctokit, email: string) {
   return data.items[i]?.author?.login as string;
 }
 
-export async function getGithubUsernameFromEmail(octokit: ProbotOctokit, email: string): Promise<string | null> {
+export async function getGithubUsernameFromEmail(
+  octokit: ProbotOctokit,
+  email: string,
+): Promise<string | null> {
   try {
     const { data } = await octokit.search.users({
       q: `${email} in:email`,
@@ -32,7 +36,13 @@ export async function getGithubUsernameFromEmail(octokit: ProbotOctokit, email: 
   }
 }
 
-export async function fetchSpecContent(octokit: ProbotOctokit, owner: string, repo: string, path: string, ref: string): Promise<string | null> {
+export async function fetchSpecContent(
+  octokit: ProbotOctokit,
+  owner: string,
+  repo: string,
+  path: string,
+  ref: string,
+): Promise<string | null> {
   try {
     const { data: fileContent } = await octokit.repos.getContent({
       owner,
@@ -41,11 +51,11 @@ export async function fetchSpecContent(octokit: ProbotOctokit, owner: string, re
       ref,
     });
 
-    if (!('content' in fileContent)) {
+    if (!("content" in fileContent)) {
       return null;
     }
 
-    return Buffer.from(fileContent.content, 'base64').toString('utf8');
+    return Buffer.from(fileContent.content, "base64").toString("utf8");
   } catch (error) {
     throw new Error(`Error fetching content for ${path}: ${error}`);
   }

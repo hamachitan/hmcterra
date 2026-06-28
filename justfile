@@ -1,8 +1,7 @@
 dev:
-    bun run build
-    bun start
+    deno run start
 
 test:
-    bun run test
+    deno run test
 
 t: test

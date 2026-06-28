@@ -1,4 +1,5 @@
-import { Readable } from "stream";
+import { Readable } from "node:stream";
+import { Buffer } from "node:buffer";
 
 type LogData = string | Buffer | NodeJS.ReadableStream;
 
@@ -20,7 +21,10 @@ async function* toAsyncIterable(data: LogData): AsyncIterable<Buffer> {
   }
 }
 
-export async function tailMatchingLines(data: LogData, limit: number): Promise<string[]> {
+export async function tailMatchingLines(
+  data: LogData,
+  limit: number,
+): Promise<string[]> {
   // `<timestamp> rpmbuild │ `
   const prefixRegex = /^\S+ \w+ │ /;
   const tail: string[] = [];

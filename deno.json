@@ -1,0 +1,16 @@
+{
+  "tasks": {
+    "dev": "deno run --watch --allow-all src/main.ts",
+    "start": "deno run --allow-all src/main.ts",
+    "lint": "oxlint --type-aware --type-check",
+    "test": "vitest --no-watch --coverage"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/fs": "jsr:@std/fs@^1.0.24",
+    "dotenv": "https://deno.land/x/dotenv@v3.2.0/load.ts"
+  },
+  "lint": {
+    "exclude": ["**/*.test.*"]
+  }
+}

@@ -24,7 +24,8 @@ docker run -e APP_ID=<app-id> -e PRIVATE_KEY=<pem-value> hmcterra
 
 ## Contributing
 
-If you have suggestions for how hmcterra could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how hmcterra could be improved, or want to report a
+bug, open an issue! We'd love all and any contributions.
 
 For more, check out the [Contributing Guide](CONTRIBUTING.md).
 

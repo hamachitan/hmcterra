@@ -13,14 +13,11 @@ export interface CILintParams {
 
 export interface CILintFunction {
   name: string;
-  check: (_params: CILintParams) => Promise<CICheckResult>;
+  check(_params: CILintParams): Promise<CICheckResult> | CICheckResult;
 }
 
-import { unpackagedFiles } from "./ci_lints/unpackaged_files.js";
+import unpackagedFiles from "./ci_lints/unpackaged_files.ts";
 
 export const ciLints: CILintFunction[] = [
-  {
-    name: "unpackagedFiles",
-    check: unpackagedFiles,
-  },
+  unpackagedFiles,
 ];
