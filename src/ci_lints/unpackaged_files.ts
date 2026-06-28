@@ -2,7 +2,9 @@ import { CICheckResult, CILintParams } from "../ci_linting.ts";
 
 const markerLine = "    Installed (but unpackaged) file(s) found:";
 
-export async function unpackagedFiles({ logs }: CILintParams): Promise<CICheckResult> {
+export async function unpackagedFiles(
+  { logs }: CILintParams,
+): Promise<CICheckResult> {
   for (let i = 0; i < logs.length - 1; i += 1) {
     if (logs[i] !== markerLine) continue;
 

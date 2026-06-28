@@ -1,7 +1,15 @@
 // you can import your modules
 // import index from '../src/index'
 
-import { describe, beforeAll, beforeEach, afterEach, test, expect, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import nock from "nock";
 // requiring our app implementation
 import myProbotApp, { handlePullRequestAutolabel } from "../src/index.js";
@@ -46,8 +54,8 @@ describe("My Probot app", () => {
       ...pullRequestPayload,
       pull_request: {
         ...pullRequestPayload.pull_request,
-        base: { ref: "main" }
-      }
+        base: { ref: "main" },
+      },
     };
 
     const mock = nock("https://api.github.com")
@@ -61,10 +69,15 @@ describe("My Probot app", () => {
       .get("/repos/hamachitan/terra-test/pulls/1/files")
       .reply(200, []);
 
-    await (probot as Probot).receive({ name: "pull_request", payload: unsupportedPayload } as any);
+    await (probot as Probot).receive(
+      { name: "pull_request", payload: unsupportedPayload } as any,
+    );
 
     // should not make any API calls for unsupported branch
-    expect(mock.pendingMocks()).toStrictEqual(["POST https://api.github.com:443/app/installations/2/access_tokens", "GET https://api.github.com:443/repos/hamachitan/terra-test/pulls/1/files"]);
+    expect(mock.pendingMocks()).toStrictEqual([
+      "POST https://api.github.com:443/app/installations/2/access_tokens",
+      "GET https://api.github.com:443/repos/hamachitan/terra-test/pulls/1/files",
+    ]);
   });
 
   test.skip("skips PR with no spec files", async () => {
@@ -81,21 +94,25 @@ describe("My Probot app", () => {
       .reply(200, [
         {
           filename: "README.md",
-          status: "modified"
-        }
+          status: "modified",
+        },
       ])
       .get("/repos/hamachitan/terra-test/labels")
       .reply(200, [])
       .post("/repos/hamachitan/terra-test/issues/1/labels")
       .reply(200, []);
 
-    await (probot as Probot).receive({ name: "pull_request", payload: pullRequestPayload } as any);
+    await (probot as Probot).receive(
+      { name: "pull_request", payload: pullRequestPayload } as any,
+    );
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });
 
   test("adds sync labels to opened PR", async () => {
-    const listLabelsMock = vi.fn().mockResolvedValue({ data: [{ name: "sync-frawhide" }, { name: "other-label" }] });
+    const listLabelsMock = vi.fn().mockResolvedValue({
+      data: [{ name: "sync-frawhide" }, { name: "other-label" }],
+    });
     const addLabelsMock = vi.fn().mockResolvedValue({});
     const mockContext = {
       payload: {
@@ -103,25 +120,28 @@ describe("My Probot app", () => {
           number: 2,
           base: { ref: "f40" },
           labels: [],
-          user: { login: "testuser" }
+          user: { login: "testuser" },
         },
         action: "opened",
-        repository: { owner: { login: "hamachitan" }, name: "synclbls" }
+        repository: { owner: { login: "hamachitan" }, name: "synclbls" },
       },
       octokit: {
         issues: {
           listLabelsForRepo: listLabelsMock,
-          addLabels: addLabelsMock
-        }
+          addLabels: addLabelsMock,
+        },
       },
       repo: vi.fn().mockReturnValue({ owner: "hamachitan", repo: "synclbls" }),
-      issue: vi.fn().mockReturnValue({ labels: ["sync-frawhide"] })
+      issue: vi.fn().mockReturnValue({ labels: ["sync-frawhide"] }),
     } as any;
     const mockApp = { log: { debug: vi.fn() } } as any;
 
     await handlePullRequestAutolabel(mockContext, mockApp);
 
-    expect(listLabelsMock).toHaveBeenCalledWith({ owner: "hamachitan", repo: "synclbls" });
+    expect(listLabelsMock).toHaveBeenCalledWith({
+      owner: "hamachitan",
+      repo: "synclbls",
+    });
     expect(addLabelsMock).toHaveBeenCalledWith({ labels: ["sync-frawhide"] });
   });
 
@@ -134,16 +154,16 @@ describe("My Probot app", () => {
           number: 1,
           base: { ref: "f40" },
           labels: [{ name: "nosync" }],
-          user: { login: "testuser" }
+          user: { login: "testuser" },
         },
-        action: "opened"
+        action: "opened",
       },
       octokit: {
         issues: {
           listLabelsForRepo: listLabelsMock,
-          addLabels: addLabelsMock
-        }
-      }
+          addLabels: addLabelsMock,
+        },
+      },
     } as any;
     const mockApp = { log: { debug: vi.fn() } } as any;
 
@@ -163,16 +183,16 @@ describe("My Probot app", () => {
           base: { ref: "f40" },
           labels: [],
           user: { login: "testuser" },
-          body: "This PR has nosync in the body"
+          body: "This PR has nosync in the body",
         },
-        action: "opened"
+        action: "opened",
       },
       octokit: {
         issues: {
           listLabelsForRepo: listLabelsMock,
-          addLabels: addLabelsMock
-        }
-      }
+          addLabels: addLabelsMock,
+        },
+      },
     } as any;
     const mockApp = { log: { debug: vi.fn() } } as any;
 
@@ -183,10 +203,10 @@ describe("My Probot app", () => {
   });
 
   test.skip("handles issues.opened event", async () => {
-    const specContent = fs.readFileSync('test/anda-srpm-macros.spec', 'utf8');
+    const specContent = fs.readFileSync("test/anda-srpm-macros.spec", "utf8");
     const mockMadoguchi = nock(MADOGUCHI_BASE_URL)
       .get("/redirect/terra40/packages/anda-srpm-macros/spec/raw")
-      .reply(302, '', { location: `${MADOGUCHI_BASE_URL}/redirected-real` })
+      .reply(302, "", { location: `${MADOGUCHI_BASE_URL}/redirected-real` })
       .get("/redirected-real")
       .reply(200, specContent);
 
@@ -200,7 +220,7 @@ describe("My Probot app", () => {
 
     await (probot as Probot).receive({
       name: "issues.opened",
-      payload: issuePayload
+      payload: issuePayload,
     } as any);
 
     mockMadoguchi.done();
@@ -215,7 +235,10 @@ describe("My Probot app", () => {
     myProbotApp(mockApp as any, { getRouter });
 
     expect(getRouter).toHaveBeenCalledWith("/");
-    expect(mockRouter.get).toHaveBeenCalledWith('/health', expect.any(Function));
+    expect(mockRouter.get).toHaveBeenCalledWith(
+      "/health",
+      expect.any(Function),
+    );
 
     const handler = mockRouter.get.mock.calls[0][1];
     const mockRes = { json: vi.fn() };
@@ -234,7 +257,7 @@ describe("My Probot app", () => {
       .get("/repos/hamachitan/terra-test/pulls/1/files")
       .reply(200, [
         { filename: "pkg1.spec", status: "modified" },
-        { filename: "pkg2.spec", status: "added" }
+        { filename: "pkg2.spec", status: "added" },
       ])
       .get("/repos/hamachitan/terra-test/contents/pkg1.spec?ref=abc123")
       .reply(200, { content: fs.readFileSync("./test/pkgs1.spec") })
@@ -245,7 +268,9 @@ describe("My Probot app", () => {
       .delete("/repos/hamachitan/terra-test/pulls/1/requested_reviewers")
       .reply(200, {});
 
-    await (probot as Probot).receive({ name: "pull_request", payload: reviewRequestedPayload } as any);
+    await (probot as Probot).receive(
+      { name: "pull_request", payload: reviewRequestedPayload } as any,
+    );
 
     expect(mock.pendingMocks()).toStrictEqual([]);
   });

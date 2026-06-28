@@ -13,9 +13,32 @@ export interface CheckResult {
 }
 
 export interface LintParams {
-  context: Context<"pull_request.opened" | "pull_request.reopened" | "pull_request.review_requested">;
+  context: Context<
+    | "pull_request.opened"
+    | "pull_request.reopened"
+    | "pull_request.review_requested"
+  >;
   app: Probot;
-  file: { sha: string; filename: string; status: "added" | "removed" | "renamed" | "changed" | "modified" | "copied" | "unchanged"; additions: number; deletions: number; changes: number; blob_url: string; raw_url: string; contents_url: string; patch?: string; previous_filename?: string; };
+  file: {
+    sha: string;
+    filename: string;
+    status:
+      | "added"
+      | "removed"
+      | "renamed"
+      | "changed"
+      | "modified"
+      | "copied"
+      | "unchanged";
+    additions: number;
+    deletions: number;
+    changes: number;
+    blob_url: string;
+    raw_url: string;
+    contents_url: string;
+    patch?: string;
+    previous_filename?: string;
+  };
   specContent: string;
 }
 

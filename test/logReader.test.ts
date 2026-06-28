@@ -1,4 +1,4 @@
-import { test, expect } from "vitest";
+import { expect, test } from "vitest";
 import { Readable } from "stream";
 import { tailMatchingLines } from "../src/utils/logReader.js";
 
@@ -8,7 +8,7 @@ test("tailMatchingLines returns last matching lines without prefix", async () =>
     "no match here",
     "1235 rpmbuild │ second line",
     "1236 rpmbuild │ third line",
-    "1237 rpmbuild │ fourth line"
+    "1237 rpmbuild │ fourth line",
   ].join("\n");
 
   const result = await tailMatchingLines(input, 2);
@@ -20,7 +20,7 @@ test("tailMatchingLines handles stream chunks and final line without newline", a
   const chunks = [
     "1234 rpmbuild │ alpha\n1235",
     " rpmbuild │ beta\n",
-    "1236 rpmbuild │ gamma"
+    "1236 rpmbuild │ gamma",
   ];
   const stream = Readable.from(chunks);
 
