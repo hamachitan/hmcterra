@@ -1,5 +1,4 @@
 dev:
-    deno run build
     deno run start
 
 test:
