@@ -64,13 +64,9 @@ export class Invocation {
       do word += invocation[i]; while (
         ++i < invocation.length && !invocation[i].match(/\s/)
       );
-      if (word.startsWith("--")) {
-        this.parseLongFlag(word);
-      } else if (word.startsWith("-")) {
-        this.parseShortFlags(word);
-      } else {
-        this.args.push(word);
-      }
+      if (word.startsWith("--")) this.parseLongFlag(word);
+      else if (word.startsWith("-")) this.parseShortFlags(word);
+      else this.args.push(word);
     }
   }
 

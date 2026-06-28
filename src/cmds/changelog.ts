@@ -1,7 +1,7 @@
 // vim: ts=2 sw=2
 import { Context, Probot } from "probot";
-import { Command } from "../command.js";
-import { runRpmspec } from "../utils/rpm.js";
+import { Command } from "../command.ts";
+import { runRpmspec } from "../utils/rpm.ts";
 import { Buffer } from "node:buffer";
 
 const changelogRegex = /^%changelog\s*$/m;
