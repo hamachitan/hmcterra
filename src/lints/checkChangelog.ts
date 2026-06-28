@@ -12,7 +12,7 @@ export async function checkChangelog({ app, file, specContent }: LintParams): Pr
   const autoIndex = lines.findIndex(line => line.trim() === '%autochangelog');
   if (autoIndex !== -1) {
     try {
-      const packager = await runRpmspec(specContent, '%{packager}');
+      const packager = await runRpmspec(specContent, '%{packager}\n');
       if (packager === '(none)') return result;
 
       const versionRelease = (await runRpmspec(specContent, '%{version}-%{release}\n')).split('\n')[0];
