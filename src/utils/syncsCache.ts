@@ -1,4 +1,5 @@
 import { Context, Probot } from "probot";
+import process from "node:process";
 
 const SYNCS_CACHE_EXPIRE = 12 * 60 * 60 * 1000;
 let syncsCache = {

@@ -1,4 +1,5 @@
 import { Readable } from "node:stream";
+import { Buffer } from "node:buffer";
 
 type LogData = string | Buffer | NodeJS.ReadableStream;
 

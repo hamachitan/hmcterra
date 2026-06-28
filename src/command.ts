@@ -1,7 +1,7 @@
 // vim: ts=2 sw=2
 import { Context, Probot } from "probot";
-import NosyncCommand from "./cmds/nosync";
-import ChangelogCommand from "./cmds/changelog";
+import NosyncCommand from "./cmds/nosync.ts";
+import ChangelogCommand from "./cmds/changelog.ts";
 
 export interface Command<Flags extends { [flag: string]: string[] }> {
   flags: Flags;
@@ -15,7 +15,7 @@ export interface Command<Flags extends { [flag: string]: string[] }> {
   ): Promise<string>;
 }
 
-export const commands: { [cmdname: string]: Command<any> } = {
+export const commands = {
   nosync: new NosyncCommand(),
   changelog: new ChangelogCommand(),
 };
@@ -41,7 +41,7 @@ export class UnknownShortFlagErr implements InvokeErr {
 }
 
 export class Invocation {
-  cmdname: string = "";
+  cmdname!: keyof typeof commands; // アホですか！.wav（きりたん公式ボイス）
   args: string[] = [];
   flags: {
     [flag: string]: (string | null)[];
@@ -49,10 +49,13 @@ export class Invocation {
   errors: InvokeErr[] = [];
 
   constructor(invocation: string) {
-    let i = 0;
-    do this.cmdname += invocation[i]; while (
+    let i = 0, cmdname = "";
+    do cmdname += invocation[i]; while (
       ++i < invocation.length && !invocation[i].match(/\s/)
     );
+    // アホですね…….wav（きりたん公式ボイス）
+    if (cmdname in commands) this.cmdname = cmdname as keyof typeof commands;
+    else return;
 
     // assume no trailing spaces
     while (i < invocation.length) {
@@ -62,37 +65,38 @@ export class Invocation {
         ++i < invocation.length && !invocation[i].match(/\s/)
       );
       if (word.startsWith("--")) {
-        let flagname = "";
-        let flagarg = null;
-        const i = word.indexOf("=");
-        if (i !== -1) {
-          flagname = word.substring(2, i);
-          flagarg = word.substring(i + 1);
-        }
-        const j = word.indexOf(":");
-        if (i !== -1) {
-          flagname = word.substring(2, j);
-          flagarg = word.substring(j + 1);
-        }
-        if (flagname === "") flagname = word.substring(2);
-        if (this.flags[flagname] == null) this.flags[flagname] = [];
-        this.flags[flagname].push(flagarg);
+        this.parseLongFlag(word);
       } else if (word.startsWith("-")) {
-        for (const ch of word.substring(1)) {
-          let done = false;
-          for (const flag in commands[this.cmdname]?.flags ?? {}) {
-            if (commands[this.cmdname].flags[flag].includes(ch)) {
-              if (this.flags[flag] == null) this.flags[flag] = [];
-              this.flags[flag].push(null);
-              done = true;
-              break;
-            }
-          }
-          if (!done) this.errors.push(new UnknownShortFlagErr(ch));
-        }
+        this.parseShortFlags(word);
       } else {
         this.args.push(word);
       }
+    }
+  }
+
+  parseLongFlag(word: string) {
+    let flagname = "", flagarg = null, i = word.indexOf("=");
+    if (i === -1) i = word.indexOf(":");
+    if (i === -1) flagname = word.substring(2);
+    else {
+      flagname = word.substring(2, i);
+      flagarg = word.substring(i + 1);
+    }
+    if (!(flagname in commands[this.cmdname].flags)) {
+      this.errors.push(new UnknownFlagErr(flagname));
+    } else if (this.flags[flagname] == null) this.flags[flagname] = [flagarg];
+    else this.flags[flagname].push(flagarg);
+  }
+
+  parseShortFlags(word: string) {
+    for (const ch of word.substring(1)) {
+      const [flag, _] =
+        Object.entries(commands[this.cmdname]?.flags ?? {}).find((
+          [_, flags],
+        ) => flags.includes(ch)) ?? [];
+      if (!flag) this.errors.push(new UnknownShortFlagErr(ch));
+      else if (this.flags[flag] == null) this.flags[flag] = [null];
+      else this.flags[flag].push(null);
     }
   }
 
@@ -100,20 +104,17 @@ export class Invocation {
     ctx: Context<"issue_comment.created">,
     app: Probot,
   ): Promise<string> {
-    const cmd = commands[this.cmdname];
-    if (cmd === null) {
+    if (!(this.cmdname in commands)) {
       return `🛑 \`${this.cmdname}\`: command not found`;
     }
-    this.errors.push(
-      ...Object.keys(this.flags).filter((f) =>
-        !Object.keys(cmd.flags).includes(f)
-      ).map((f) => new UnknownFlagErr(f)),
-    );
+
+    const cmd = commands[this.cmdname as keyof typeof commands];
 
     if (this.errors.length !== 0) {
       return this.errors.map((e) => `🛑 \`${this.cmdname}\`: ${e.display()}`)
         .join("\n\n");
     }
+    // @ts-ignore 2345: cannot typecheck this.flags
     return await cmd.exec(ctx, app, this.args, this.flags);
   }
 }

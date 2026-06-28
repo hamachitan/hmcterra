@@ -14,6 +14,8 @@ import { getOrgMembers } from "./utils/orgMembersCache.ts";
 import { getSyncLabels } from "./utils/syncsCache.ts";
 import { ciLints } from "./ci_linting.ts";
 import { tailMatchingLines } from "./utils/logReader.ts";
+import { Buffer } from "node:buffer";
+import process from "node:process";
 
 export async function handlePullRequestAutolabel(
   context: Context<"pull_request">,
@@ -280,7 +282,7 @@ async function handleWorkflowRunCompleted(
   const buildJobs = jobsData.jobs.filter((job) => isBuildJob(job.name));
   const preferredJob =
     buildJobs.find((job) => getJobArchFromName(job.name) === "x86_64") ??
-    buildJobs[0];
+      buildJobs[0];
   if (!preferredJob) return;
 
   const logsResponse = await context.octokit.actions
@@ -321,9 +323,9 @@ export default (
 ) => {
   const isServeRepo = (repo: string) =>
     repo ===
-    ((process.env["NODE_ENV"] === "production")
-      ? "terrapkg/packages"
-      : "hamachitan/terra-test");
+      ((process.env["NODE_ENV"] === "production")
+        ? "terrapkg/packages"
+        : "hamachitan/terra-test");
 
   if (getRouter) {
     const router = getRouter("/");

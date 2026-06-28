@@ -1,4 +1,5 @@
 import { ProbotOctokit } from "probot";
+import { Buffer } from "node:buffer";
 
 //? npm github-username
 

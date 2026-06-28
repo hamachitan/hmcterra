@@ -4,6 +4,7 @@ import { CheckResult } from "../linting.js";
 import { MADOGUCHI_BASE_URL } from "../consts.js";
 import { getSyncBranches } from "../utils/syncsCache.js";
 import { gitBranch2SatmBranch } from "../utils/terrautil.js";
+import { Buffer } from "node:buffer";
 
 const specReleaseRegex = /^Release:(\s*)([0-9]+)(.*)$/m;
 

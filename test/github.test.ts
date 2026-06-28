@@ -3,6 +3,7 @@ import {
   fetchSpecContent,
   getGithubUsernameFromEmail,
 } from "../src/utils/github.js";
+import { Buffer } from "node:buffer";
 
 test("getGithubUsernameFromEmail returns username from user search", async () => {
   const mockOctokit = {

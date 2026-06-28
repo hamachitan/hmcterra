@@ -2,6 +2,7 @@
 import { Context, Probot } from "probot";
 import { Command } from "../command.js";
 import { runRpmspec } from "../utils/rpm.js";
+import { Buffer } from "node:buffer";
 
 const changelogRegex = /^%changelog\s*$/m;
 
