@@ -68,10 +68,8 @@ export async function processSpecFiles(
         ctx.repo({ content: result.content }),
       );
       blobs.push({ path: spec.filename, sha: blob.sha });
-    } catch (error: any) {
-      errors.push(
-        `Error processing ${spec.filename}: ${error.message || String(error)}`,
-      );
+    } catch (error) {
+      errors.push(`Error processing ${spec.filename}: ${error}`);
     }
   }
 
