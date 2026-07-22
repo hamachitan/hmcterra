@@ -2,6 +2,7 @@
 import { Context, Probot } from "probot";
 import NosyncCommand from "./cmds/nosync.ts";
 import ChangelogCommand from "./cmds/changelog.ts";
+import BumpCommand from "./cmds/bump.ts";
 
 export interface Command<Flags extends { [flag: string]: string[] }> {
   flags: Flags;
@@ -18,6 +19,7 @@ export interface Command<Flags extends { [flag: string]: string[] }> {
 export const commands = {
   nosync: new NosyncCommand(),
   changelog: new ChangelogCommand(),
+  bump: new BumpCommand(),
 };
 
 export interface InvokeErr {

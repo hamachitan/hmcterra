@@ -8,7 +8,6 @@
     "jsr:@std/path@^1.1.5": "1.1.5",
     "npm:@eslint/js@^9.39.2": "9.39.4",
     "npm:@octokit/plugin-rest-endpoint-methods@17": "17.0.0_@octokit+core@7.0.6",
-    "npm:@octokit/types@16": "16.0.0",
     "npm:@types/deno@^2.7.0": "2.7.0",
     "npm:@types/node@20": "20.19.43",
     "npm:@types/supertest@^6.0.3": "6.0.3",
@@ -3082,7 +3081,6 @@
       "dependencies": [
         "npm:@eslint/js@^9.39.2",
         "npm:@octokit/plugin-rest-endpoint-methods@17",
-        "npm:@octokit/types@16",
         "npm:@types/deno@^2.7.0",
         "npm:@types/node@20",
         "npm:@types/supertest@^6.0.3",
