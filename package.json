@@ -12,6 +12,7 @@
     "probot-app"
   ],
   "dependencies": {
+    "@octokit/plugin-rest-endpoint-methods": "^17.0.0",
     "@types/deno": "^2.7.0",
     "oxlint": "1.36.0",
     "probot": "13.4.5"

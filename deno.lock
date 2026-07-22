@@ -7,6 +7,8 @@
     "jsr:@std/internal@^1.0.14": "1.0.14",
     "jsr:@std/path@^1.1.5": "1.1.5",
     "npm:@eslint/js@^9.39.2": "9.39.4",
+    "npm:@octokit/plugin-rest-endpoint-methods@17": "17.0.0_@octokit+core@7.0.6",
+    "npm:@octokit/types@16": "16.0.0",
     "npm:@types/deno@^2.7.0": "2.7.0",
     "npm:@types/node@20": "20.19.43",
     "npm:@types/supertest@^6.0.3": "6.0.3",
@@ -210,13 +212,13 @@
       "dependencies": [
         "@octokit/auth-oauth-app",
         "@octokit/auth-oauth-user",
-        "@octokit/request",
-        "@octokit/request-error",
+        "@octokit/request@8.4.1",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@13.10.0",
         "deprecation",
         "lru-cache@npm:@wolfy1339/lru-cache@11.0.2-patch.1",
         "universal-github-app-jwt",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
       ]
     },
     "@octokit/auth-oauth-app@7.1.0": {
@@ -224,20 +226,20 @@
       "dependencies": [
         "@octokit/auth-oauth-device",
         "@octokit/auth-oauth-user",
-        "@octokit/request",
+        "@octokit/request@8.4.1",
         "@octokit/types@13.10.0",
         "@types/btoa-lite",
         "btoa-lite",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
       ]
     },
     "@octokit/auth-oauth-device@6.1.0": {
       "integrity": "sha512-FNQ7cb8kASufd6Ej4gnJ3f1QB5vJitkoV1O0/g6e6lUsQ7+VsSNRHRmFScN2tV4IgKA12frrr/cegUs0t+0/Lw==",
       "dependencies": [
         "@octokit/oauth-methods",
-        "@octokit/request",
+        "@octokit/request@8.4.1",
         "@octokit/types@13.10.0",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
       ]
     },
     "@octokit/auth-oauth-user@4.1.0": {
@@ -245,47 +247,77 @@
       "dependencies": [
         "@octokit/auth-oauth-device",
         "@octokit/oauth-methods",
-        "@octokit/request",
+        "@octokit/request@8.4.1",
         "@octokit/types@13.10.0",
         "btoa-lite",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
       ]
     },
     "@octokit/auth-token@4.0.0": {
       "integrity": "sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA=="
     },
+    "@octokit/auth-token@6.0.0": {
+      "integrity": "sha512-P4YJBPdPSpWTQ1NU4XYdvHvXJJDxM6YwpS0FZHRgP7YFkdVxsWcpWGy/NVqlAA7PcPCnMacXlRm1y2PFZRWL/w=="
+    },
     "@octokit/auth-unauthenticated@5.0.1": {
       "integrity": "sha512-oxeWzmBFxWd+XolxKTc4zr+h3mt+yofn4r7OfoIkR/Cj/o70eEGmPsFbueyJE2iBAGpjgTnEOKM3pnuEGVmiqg==",
       "dependencies": [
-        "@octokit/request-error",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@12.6.0"
       ]
     },
     "@octokit/core@5.2.2": {
       "integrity": "sha512-/g2d4sW9nUDJOMz3mabVQvOGhVa4e/BN/Um7yca9Bb2XTzPPnfTWHWQg+IsEYO7M3Vx+EXvaM/I2pJWIMun1bg==",
       "dependencies": [
-        "@octokit/auth-token",
-        "@octokit/graphql",
-        "@octokit/request",
-        "@octokit/request-error",
+        "@octokit/auth-token@4.0.0",
+        "@octokit/graphql@7.1.1",
+        "@octokit/request@8.4.1",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@13.10.0",
-        "before-after-hook",
-        "universal-user-agent"
+        "before-after-hook@2.2.3",
+        "universal-user-agent@6.0.1"
+      ]
+    },
+    "@octokit/core@7.0.6": {
+      "integrity": "sha512-DhGl4xMVFGVIyMwswXeyzdL4uXD5OGILGX5N8Y+f6W7LhC1Ze2poSNrkF/fedpVDHEEZ+PHFW0vL14I+mm8K3Q==",
+      "dependencies": [
+        "@octokit/auth-token@6.0.0",
+        "@octokit/graphql@9.0.3",
+        "@octokit/request@10.0.11",
+        "@octokit/request-error@7.1.0",
+        "@octokit/types@16.0.0",
+        "before-after-hook@4.0.0",
+        "universal-user-agent@7.0.3"
+      ]
+    },
+    "@octokit/endpoint@11.0.3": {
+      "integrity": "sha512-FWFlNxghg4HrXkD3ifYbS/IdL/mDHjh9QcsNyhQjN8dplUoZbejsdpmuqdA76nxj2xoWPs7p8uX2SNr9rYu0Ag==",
+      "dependencies": [
+        "@octokit/types@16.0.0",
+        "universal-user-agent@7.0.3"
       ]
     },
     "@octokit/endpoint@9.0.6": {
       "integrity": "sha512-H1fNTMA57HbkFESSt3Y9+FBICv+0jFceJFPWDePYlR/iMGrwM5ph+Dd4XRQs+8X+PUFURLQgX9ChPfhJ/1uNQw==",
       "dependencies": [
         "@octokit/types@13.10.0",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
       ]
     },
     "@octokit/graphql@7.1.1": {
       "integrity": "sha512-3mkDltSfcDUoa176nlGoA32RGjeWjl3K7F/BwHwRMJUW/IteSa4bnSV8p2ThNkcIcZU2umkZWxwETSSCJf2Q7g==",
       "dependencies": [
-        "@octokit/request",
+        "@octokit/request@8.4.1",
         "@octokit/types@13.10.0",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
+      ]
+    },
+    "@octokit/graphql@9.0.3": {
+      "integrity": "sha512-grAEuupr/C1rALFnXTv6ZQhFuL1D8G5y8CN04RgrO4FIPMrtm+mcZzFG7dcBm+nq+1ppNixu+Jd78aeJOYxlGA==",
+      "dependencies": [
+        "@octokit/request@10.0.11",
+        "@octokit/types@16.0.0",
+        "universal-user-agent@7.0.3"
       ]
     },
     "@octokit/oauth-authorization-url@6.0.2": {
@@ -295,8 +327,8 @@
       "integrity": "sha512-4tuKnCRecJ6CG6gr0XcEXdZtkTDbfbnD5oaHBmLERTjTMZNi2CbfEHZxPU41xXLDG4DfKf+sonu00zvKI9NSbw==",
       "dependencies": [
         "@octokit/oauth-authorization-url",
-        "@octokit/request",
-        "@octokit/request-error",
+        "@octokit/request@8.4.1",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@13.10.0",
         "btoa-lite"
       ]
@@ -307,32 +339,42 @@
     "@octokit/openapi-types@24.2.0": {
       "integrity": "sha512-9sIH3nSUttelJSXUrmGzl7QUBFul0/mB8HRYl3fOlgHbIWG+WnYDXU3v/2zMtAvuzZ/ed00Ei6on975FhBfzrg=="
     },
+    "@octokit/openapi-types@27.0.0": {
+      "integrity": "sha512-whrdktVs1h6gtR+09+QsNk2+FO+49j6ga1c55YZudfEG+oKJVvJLQi3zkOm5JjiUXAagWK2tI2kTGKJ2Ys7MGA=="
+    },
     "@octokit/plugin-enterprise-compatibility@4.1.0": {
       "integrity": "sha512-a8QehVu9Iy4k+m2XgG2rrF4m9vhlRIaefOMr0yJzgQCt4KpiTj5mZVrzSwagyOovkJdD0yDolQazBQZqPWTFSQ==",
       "dependencies": [
-        "@octokit/request-error",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@12.6.0"
       ]
     },
     "@octokit/plugin-paginate-rest@11.4.4-cjs.2_@octokit+core@5.2.2": {
       "integrity": "sha512-2dK6z8fhs8lla5PaOTgqfCGBxgAv/le+EhPs27KklPhm1bKObpu6lXzwfUEQ16ajXzqNrKMujsFyo9K2eaoISw==",
       "dependencies": [
-        "@octokit/core",
+        "@octokit/core@5.2.2",
         "@octokit/types@13.10.0"
       ]
     },
     "@octokit/plugin-rest-endpoint-methods@13.3.2-cjs.1_@octokit+core@5.2.2": {
       "integrity": "sha512-VUjIjOOvF2oELQmiFpWA1aOPdawpyaCUqcEBc/UOUnj3Xp6DJGrJ1+bjUIIDzdHjnFNO6q57ODMfdEZnoBkCwQ==",
       "dependencies": [
-        "@octokit/core",
+        "@octokit/core@5.2.2",
         "@octokit/types@13.10.0"
+      ]
+    },
+    "@octokit/plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.6": {
+      "integrity": "sha512-B5yCyIlOJFPqUUeiD0cnBJwWJO8lkJs5d8+ze9QDP6SvfiXSz1BF+91+0MeI1d2yxgOhU/O+CvtiZ9jSkHhFAw==",
+      "dependencies": [
+        "@octokit/core@7.0.6",
+        "@octokit/types@16.0.0"
       ]
     },
     "@octokit/plugin-retry@6.1.0_@octokit+core@5.2.2": {
       "integrity": "sha512-WrO3bvq4E1Xh1r2mT9w6SDFg01gFmP81nIG77+p/MqW1JeXXgL++6umim3t6x0Zj5pZm3rXAN+0HEjmmdhIRig==",
       "dependencies": [
-        "@octokit/core",
-        "@octokit/request-error",
+        "@octokit/core@5.2.2",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@13.10.0",
         "bottleneck"
       ]
@@ -340,7 +382,7 @@
     "@octokit/plugin-throttling@8.2.0_@octokit+core@5.2.2": {
       "integrity": "sha512-nOpWtLayKFpgqmgD0y3GqXafMFuKcA4tRPZIfu7BArd2lEZeb1988nhWhwx4aZWmjDmUfdgVf7W+Tt4AmvRmMQ==",
       "dependencies": [
-        "@octokit/core",
+        "@octokit/core@5.2.2",
         "@octokit/types@12.6.0",
         "bottleneck"
       ]
@@ -353,13 +395,30 @@
         "once"
       ]
     },
+    "@octokit/request-error@7.1.0": {
+      "integrity": "sha512-KMQIfq5sOPpkQYajXHwnhjCC0slzCNScLHs9JafXc4RAJI+9f+jNDlBNaIMTvazOPLgb4BnlhGJOTbnN0wIjPw==",
+      "dependencies": [
+        "@octokit/types@16.0.0"
+      ]
+    },
+    "@octokit/request@10.0.11": {
+      "integrity": "sha512-+s7HUxjfFqOMS9VlIwDffq0MikjSAK0gSpG73W+meAvVAvX4MBrHYTK5Bj3Uot55qFT4gzUtfzE4mGWY4Br8/Q==",
+      "dependencies": [
+        "@octokit/endpoint@11.0.3",
+        "@octokit/request-error@7.1.0",
+        "@octokit/types@16.0.0",
+        "content-type@2.0.0",
+        "json-with-bigint",
+        "universal-user-agent@7.0.3"
+      ]
+    },
     "@octokit/request@8.4.1": {
       "integrity": "sha512-qnB2+SY3hkCmBxZsR/MPCybNmbJe4KAlfWErXq+rBKkQJlbjdJeS85VI9r8UqeLYLvnAenU8Q1okM/0MBsAGXw==",
       "dependencies": [
-        "@octokit/endpoint",
-        "@octokit/request-error",
+        "@octokit/endpoint@9.0.6",
+        "@octokit/request-error@5.1.1",
         "@octokit/types@13.10.0",
-        "universal-user-agent"
+        "universal-user-agent@6.0.1"
       ]
     },
     "@octokit/types@12.6.0": {
@@ -374,6 +433,12 @@
         "@octokit/openapi-types@24.2.0"
       ]
     },
+    "@octokit/types@16.0.0": {
+      "integrity": "sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==",
+      "dependencies": [
+        "@octokit/openapi-types@27.0.0"
+      ]
+    },
     "@octokit/webhooks-methods@4.1.0": {
       "integrity": "sha512-zoQyKw8h9STNPqtm28UGOYFE7O6D4Il8VJwhAtMHFt2C4L0VQT1qGKLeefUOqHNs1mNRYSadVv7x0z8U2yyeWQ=="
     },
@@ -383,7 +448,7 @@
     "@octokit/webhooks@12.3.2": {
       "integrity": "sha512-exj1MzVXoP7xnAcAB3jZ97pTvVPkQF9y6GA/dvYC47HV7vLv+24XRS6b/v/XnyikpEuvMhugEXdGtAlU086WkQ==",
       "dependencies": [
-        "@octokit/request-error",
+        "@octokit/request-error@5.1.1",
         "@octokit/webhooks-methods",
         "@octokit/webhooks-types",
         "aggregate-error"
@@ -806,7 +871,7 @@
     "@probot/octokit-plugin-config@2.0.1_@octokit+core@5.2.2": {
       "integrity": "sha512-aWQYzPY2xiKscTVTKveghtbglqZ+W4eBLIdK1C/cNiFIofy3AxKogWgEZj29PjIe5ZRYx0sRHAPc/pkcXyOmTQ==",
       "dependencies": [
-        "@octokit/core",
+        "@octokit/core@5.2.2",
         "js-yaml"
       ]
     },
@@ -1353,6 +1418,9 @@
     },
     "before-after-hook@2.2.3": {
       "integrity": "sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ=="
+    },
+    "before-after-hook@4.0.0": {
+      "integrity": "sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ=="
     },
     "body-parser@2.3.0": {
       "integrity": "sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==",
@@ -2005,6 +2073,9 @@
     "json-stringify-safe@5.0.1": {
       "integrity": "sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA=="
     },
+    "json-with-bigint@3.5.10": {
+      "integrity": "sha512-Vcx+JVNEBts/xfcoCS69sKrOhOk/3TVlvlT+XzUOefVKnnrbYSCKpDCm10pohsJFtsJVYnwa/cXRZ4eElzaM6w=="
+    },
     "jsonwebtoken@9.0.3": {
       "integrity": "sha512-MT/xP0CrubFRNLNKvxJ2BYfy53Zkm++5bX9dtuPbqAeQpTVe0MQTFhao8+Cp//EmJp244xt6Drw/GVEGCUj40g==",
       "dependencies": [
@@ -2268,9 +2339,9 @@
       "integrity": "sha512-/6eQQZ7CpGXRiczT4BoGcRZCixczJKjb5anfZbC+bkN1B4oyayvarwR6FrklRLuC81izHqgvbdX7E/F+0Iw+tw==",
       "dependencies": [
         "@octokit/auth-app",
-        "@octokit/auth-token",
+        "@octokit/auth-token@4.0.0",
         "@octokit/auth-unauthenticated",
-        "@octokit/core",
+        "@octokit/core@5.2.2",
         "@octokit/types@12.6.0"
       ]
     },
@@ -2525,13 +2596,13 @@
     "probot@13.4.5": {
       "integrity": "sha512-bQkvel3l90Tfek6jmiyuukqRYSp6aO9f5RxHUsFu4sm1qJ4NNDY6xdf87aILZHc9FQZvyP4/7y23HVnyuUPU8A==",
       "dependencies": [
-        "@octokit/core",
+        "@octokit/core@5.2.2",
         "@octokit/plugin-enterprise-compatibility",
         "@octokit/plugin-paginate-rest",
-        "@octokit/plugin-rest-endpoint-methods",
+        "@octokit/plugin-rest-endpoint-methods@13.3.2-cjs.1_@octokit+core@5.2.2",
         "@octokit/plugin-retry",
         "@octokit/plugin-throttling",
-        "@octokit/request",
+        "@octokit/request@8.4.1",
         "@octokit/types@12.6.0",
         "@octokit/webhooks",
         "@probot/get-private-key",
@@ -2894,6 +2965,9 @@
     "universal-user-agent@6.0.1": {
       "integrity": "sha512-yCzhz6FN2wU1NiiQRogkTQszlQSlpWaw8SvVegAc+bDxbzHgh1vX8uIe8OYyMH6DwH+sdTJsgMl36+mSMdRJIQ=="
     },
+    "universal-user-agent@7.0.3": {
+      "integrity": "sha512-TmnEAEAsBJVZM/AADELsK76llnwcf9vMKuPz8JflO1frO8Lchitr0fNaN9d+Ap0BjKtqWqd/J17qeDnXh8CL2A=="
+    },
     "unpipe@1.0.0": {
       "integrity": "sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ=="
     },
@@ -3007,6 +3081,8 @@
     "packageJson": {
       "dependencies": [
         "npm:@eslint/js@^9.39.2",
+        "npm:@octokit/plugin-rest-endpoint-methods@17",
+        "npm:@octokit/types@16",
         "npm:@types/deno@^2.7.0",
         "npm:@types/node@20",
         "npm:@types/supertest@^6.0.3",

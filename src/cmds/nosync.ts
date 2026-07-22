@@ -2,7 +2,8 @@
 import { Context, Probot } from "probot";
 import { Command } from "../command.ts";
 
-export default class NosyncCommand implements Command {
+export default class NosyncCommand
+  implements Command<Record<PropertyKey, never>> {
   flags = {};
 
   async exec(
