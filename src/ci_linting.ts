@@ -16,8 +16,12 @@ export interface CILintFunction {
   check(_params: CILintParams): Promise<CICheckResult> | CICheckResult;
 }
 
+import empty_files from "./ci_lints/empty_files.ts";
+import file_not_found from "./ci_lints/file_not_found.ts";
 import unpackagedFiles from "./ci_lints/unpackaged_files.ts";
 
 export const ciLints: CILintFunction[] = [
+  empty_files,
+  file_not_found,
   unpackagedFiles,
 ];

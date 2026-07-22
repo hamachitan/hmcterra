@@ -1,6 +1,6 @@
 {
   "name": "hmcterra",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "private": true,
   "description": "Hamachitan (Terra GitHub bot)",
   "author": "madonuko",
@@ -12,6 +12,7 @@
     "probot-app"
   ],
   "dependencies": {
+    "@octokit/plugin-rest-endpoint-methods": "^17.0.0",
     "@types/deno": "^2.7.0",
     "oxlint": "1.36.0",
     "probot": "13.4.5"
