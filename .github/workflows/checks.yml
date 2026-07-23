@@ -35,7 +35,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    name: Deno lint
+    name: Lint
 
     steps:
       - name: Checkout code

@@ -16,8 +16,6 @@
     "npm:globals@^16.5.0": "16.5.0",
     "npm:jiti@^2.6.1": "2.7.0",
     "npm:nock@^14.0.5": "14.0.15",
-    "npm:oxlint-tsgolint@~0.10.1": "0.10.1",
-    "npm:oxlint@1.36.0": "1.36.0_oxlint-tsgolint@0.10.1",
     "npm:probot@13.4.5": "13.4.5",
     "npm:smee-client@2": "2.0.4",
     "npm:typescript-eslint@^8.51.0": "8.61.0_eslint@9.39.4__jiti@2.7.0_typescript@5.9.3_jiti@2.7.0",
@@ -782,76 +780,6 @@
     },
     "@oxc-project/types@0.133.0": {
       "integrity": "sha512-KzkdCd6Uxqnf6l3HOw1xfatAlUURA0g14cvBYFyJ5SaNOQbOUvBr9PKArcPcrNIeRsBdgcUzOGrhKveVpvOIGA=="
-    },
-    "@oxlint-tsgolint/darwin-arm64@0.10.1": {
-      "integrity": "sha512-KGC4++BeEqrIcmDHiJt/e6/860PWJmUJjjp0mE+smpBmRXMjmOFFjrPmN+ZyCyVgf1WdmhPkQXsRSPeTR+2omw==",
-      "os": ["darwin"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint-tsgolint/darwin-x64@0.10.1": {
-      "integrity": "sha512-tvmrDgj3Q0tdc+zMWfCVLVq8EQDEUqasm1zaWgSMYIszpID6qdgqbT+OpWWXV9fLZgtvrkoXGwxkHAUJzdVZXQ==",
-      "os": ["darwin"],
-      "cpu": ["x64"]
-    },
-    "@oxlint-tsgolint/linux-arm64@0.10.1": {
-      "integrity": "sha512-7kD28z6/ykGx8WetKTPRZt30pd+ziassxg/8cM24lhjUI+hNXyRHVtHes73dh9D6glJKno+1ut+3amUdZBZcpQ==",
-      "os": ["linux"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint-tsgolint/linux-x64@0.10.1": {
-      "integrity": "sha512-NmJmiqdzYUTHIxteSTyX6IFFgnIsOAjRWXfrS6Jbo5xlB3g39WHniSF3asB/khLJNtwSg4InUS34NprYM7zrEw==",
-      "os": ["linux"],
-      "cpu": ["x64"]
-    },
-    "@oxlint-tsgolint/win32-arm64@0.10.1": {
-      "integrity": "sha512-3KrT80vl3nXUkjuJI/z8dF6xWsKx0t9Tz4ZQHgQw3fYw+CoihBRWGklrdlmCz+EGfMyVaQLqBV9PZckhSqLe2A==",
-      "os": ["win32"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint-tsgolint/win32-x64@0.10.1": {
-      "integrity": "sha512-hW1fSJZVxG51sLdGq1sQjOzb1tsQ23z/BquJfUwL7CqBobxr7TJvGmoINL+9KryOJt0jCoaiMfWe4yoYw5XfIA==",
-      "os": ["win32"],
-      "cpu": ["x64"]
-    },
-    "@oxlint/darwin-arm64@1.36.0": {
-      "integrity": "sha512-MJkj82GH+nhvWKJhSIM6KlZ8tyGKdogSQXtNdpIyP02r/tTayFJQaAEWayG2Jhsn93kske+nimg5MYFhwO/rlg==",
-      "os": ["darwin"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint/darwin-x64@1.36.0": {
-      "integrity": "sha512-VvEhfkqj/99dCTqOcfkyFXOSbx4lIy5u2m2GHbK4WCMDySokOcMTNRHGw8fH/WgQ5cDrDMSTYIGQTmnBGi9tiQ==",
-      "os": ["darwin"],
-      "cpu": ["x64"]
-    },
-    "@oxlint/linux-arm64-gnu@1.36.0": {
-      "integrity": "sha512-EMx92X5q+hHc3olTuj/kgkx9+yP0p/AVs4yvHbUfzZhBekXNpUWxWvg4hIKmQWn+Ee2j4o80/0ACGO0hDYJ9mg==",
-      "os": ["linux"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint/linux-arm64-musl@1.36.0": {
-      "integrity": "sha512-7YCxtrPIctVYLqWrWkk8pahdCxch6PtsaucfMLC7TOlDt4nODhnQd4yzEscKqJ8Gjrw1bF4g+Ngob1gB+Qr9Fw==",
-      "os": ["linux"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint/linux-x64-gnu@1.36.0": {
-      "integrity": "sha512-lnaJVlx5r3NWmoOMesfQXJSf78jHTn8Z+sdAf795Kgteo72+qGC1Uax2SToCJVN2J8PNG3oRV5bLriiCNR2i6Q==",
-      "os": ["linux"],
-      "cpu": ["x64"]
-    },
-    "@oxlint/linux-x64-musl@1.36.0": {
-      "integrity": "sha512-AhuEU2Qdl66lSfTGu/Htirq8r/8q2YnZoG3yEXLMQWnPMn7efy8spD/N1NA7kH0Hll+cdfwgQkQqC2G4MS2lPQ==",
-      "os": ["linux"],
-      "cpu": ["x64"]
-    },
-    "@oxlint/win32-arm64@1.36.0": {
-      "integrity": "sha512-GlWCBjUJY2QgvBFuNRkiRJu7K/djLmM0UQKfZV8IN+UXbP/JbjZHWKRdd4LXlQmzoz7M5Hd6p+ElCej8/90FCg==",
-      "os": ["win32"],
-      "cpu": ["arm64"]
-    },
-    "@oxlint/win32-x64@1.36.0": {
-      "integrity": "sha512-J+Vc00Utcf8p77lZPruQgb0QnQXuKnFogN88kCnOqs2a83I+vTBB8ILr0+L9sTwVRvIDMSC0pLdeQH4svWGFZg==",
-      "os": ["win32"],
-      "cpu": ["x64"]
     },
     "@pinojs/redact@0.4.0": {
       "integrity": "sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg=="
@@ -2373,38 +2301,6 @@
     "outvariant@1.4.3": {
       "integrity": "sha512-+Sl2UErvtsoajRDKCE5/dBz4DIvHXQQnAxtQTF04OJxY0+DyZXSo5P5Bb7XYWOh81syohlYL24hbDwxedPUJCA=="
     },
-    "oxlint-tsgolint@0.10.1": {
-      "integrity": "sha512-EEHNdo5cW2w1xwYdBQ7d3IXDqWAtMkfVFrh+9gQ4kYbYJwygY4QXSh1eH80/xVipZdVKujAwBgg/nNNHk56kxQ==",
-      "optionalDependencies": [
-        "@oxlint-tsgolint/darwin-arm64",
-        "@oxlint-tsgolint/darwin-x64",
-        "@oxlint-tsgolint/linux-arm64",
-        "@oxlint-tsgolint/linux-x64",
-        "@oxlint-tsgolint/win32-arm64",
-        "@oxlint-tsgolint/win32-x64"
-      ],
-      "bin": true
-    },
-    "oxlint@1.36.0_oxlint-tsgolint@0.10.1": {
-      "integrity": "sha512-IicUdXfXgI8OKrDPnoSjvBfeEF8PkKtm+CoLlg4LYe4ypc8U+T4r7730XYshdBGZdelg+JRw8GtCb2w/KaaZvw==",
-      "dependencies": [
-        "oxlint-tsgolint"
-      ],
-      "optionalDependencies": [
-        "@oxlint/darwin-arm64",
-        "@oxlint/darwin-x64",
-        "@oxlint/linux-arm64-gnu",
-        "@oxlint/linux-arm64-musl",
-        "@oxlint/linux-x64-gnu",
-        "@oxlint/linux-x64-musl",
-        "@oxlint/win32-arm64",
-        "@oxlint/win32-x64"
-      ],
-      "optionalPeers": [
-        "oxlint-tsgolint"
-      ],
-      "bin": true
-    },
     "p-limit@2.3.0": {
       "integrity": "sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==",
       "dependencies": [
@@ -3089,8 +2985,6 @@
         "npm:globals@^16.5.0",
         "npm:jiti@^2.6.1",
         "npm:nock@^14.0.5",
-        "npm:oxlint-tsgolint@~0.10.1",
-        "npm:oxlint@1.36.0",
         "npm:probot@13.4.5",
         "npm:smee-client@2",
         "npm:typescript-eslint@^8.51.0",
