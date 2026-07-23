@@ -33,9 +33,9 @@ jobs:
           name: coverage-report
           path: coverage
 
-  oxlint:
+  lint:
     runs-on: ubuntu-latest
-    name: Oxlint
+    name: Lint
 
     steps:
       - name: Checkout code
