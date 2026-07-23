@@ -2,7 +2,6 @@
   "tasks": {
     "dev": "deno run --watch --allow-all src/main.ts",
     "start": "deno run --allow-all src/main.ts",
-    "lint": "oxlint --type-aware --type-check",
     "test": "vitest --no-watch --coverage"
   },
   "imports": {
