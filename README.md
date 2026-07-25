@@ -6,10 +6,10 @@ GitHub bot in [Terra monorepo](https://github.com/terrapkg/packages).
 
 ```sh
 # Install dependencies
-bun install
+deno install
 
 # Run the bot
-bun start
+deno task start
 ```
 
 ## Docker
