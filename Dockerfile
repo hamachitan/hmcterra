@@ -5,4 +5,4 @@ RUN dnf in -y --repo=terra,fedora --setopt=max_parallel_downloads=20 --setopt=in
 COPY . .
 RUN deno ci
 ENV NODE_ENV="production"
-CMD [ "deno", "run", "start" ]
+CMD [ "deno", "task", "start" ]
