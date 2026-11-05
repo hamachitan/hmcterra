@@ -48,6 +48,13 @@ export async function handlePullRequestLint(
   ) return;
   if (!isProdBranch(context.payload.pull_request.base.ref)) return;
 
+  if (/\bsync\b/i.test(context.payload.pull_request.title ?? "")) {
+    app.log.debug(
+      `skipping lints for sync PR #${context.payload.pull_request.number}`,
+    );
+    return;
+  }
+
   const { data: files } = await context.octokit.pulls.listFiles(
     context.pullRequest(),
   );
