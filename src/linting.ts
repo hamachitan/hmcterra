@@ -1,4 +1,5 @@
 import { checkPackager } from "./lints/checkPackager.ts";
+import { checkSummary } from "./lints/checkSummary.ts";
 import { checkChangelog } from "./lints/checkChangelog.ts";
 import { requestPackagerReview } from "./lints/requestPackagerReview.ts";
 import { Context, Probot } from "probot";
@@ -55,6 +56,10 @@ export const lints: LintFunction[] = [
   {
     name: "packager",
     check: checkPackager,
+  },
+  {
+    name: "summary",
+    check: checkSummary,
   },
   {
     name: "changelog",
