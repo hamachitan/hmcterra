@@ -1,23 +1,15 @@
-export async function runRpmspec(
+async function runRpmspecCommand(
   specContent: string,
-  queryFormat: string,
-  extraArgs: string[] = [],
+  args: string[],
 ): Promise<string> {
   const tempFile = await Deno.makeTempFile({
     prefix: "spec-",
     suffix: ".spec",
   });
-  Deno.writeFile(tempFile, new TextEncoder().encode(specContent));
+  await Deno.writeFile(tempFile, new TextEncoder().encode(specContent));
 
   const child = await new Deno.Command("rpmspec", {
-    args: [
-      "-q",
-      tempFile,
-      "--undefine=dist",
-      ...extraArgs,
-      "--queryformat",
-      queryFormat,
-    ],
+    args: [...args, tempFile],
     stdout: "piped",
     stderr: "piped",
   }).output();
@@ -25,4 +17,22 @@ export async function runRpmspec(
 
   if (child.code === 0) return new TextDecoder().decode(child.stdout).trim();
   throw new Error(`rpmspec failed: ${child.stderr.toString()}`);
+}
+
+export async function runRpmspec(
+  specContent: string,
+  queryFormat: string,
+  extraArgs: string[] = [],
+): Promise<string> {
+  return await runRpmspecCommand(specContent, [
+    "-q",
+    "--undefine=dist",
+    ...extraArgs,
+    "--queryformat",
+    queryFormat,
+  ]);
+}
+
+export async function parseSpec(specContent: string): Promise<string> {
+  return await runRpmspecCommand(specContent, ["-P", "--undefine=dist"]);
 }

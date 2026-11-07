@@ -1,4 +1,5 @@
 import { checkPackager } from "./lints/checkPackager.ts";
+import { checkArches } from "./lints/checkArches.ts";
 import { checkSummary } from "./lints/checkSummary.ts";
 import { checkChangelog } from "./lints/checkChangelog.ts";
 import { requestPackagerReview } from "./lints/requestPackagerReview.ts";
@@ -56,6 +57,10 @@ export const lints: LintFunction[] = [
   {
     name: "packager",
     check: checkPackager,
+  },
+  {
+    name: "arches",
+    check: checkArches,
   },
   {
     name: "summary",
