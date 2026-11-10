@@ -5,6 +5,8 @@ import { Command } from "../command.ts";
 export default class NosyncCommand
   implements Command<Record<PropertyKey, never>> {
   flags = {};
+  description = "Remove sync labels from the current issue or pull request.";
+  usage = "nosync [branch...]";
 
   async exec(
     ctx: Context<"issue_comment.created">,

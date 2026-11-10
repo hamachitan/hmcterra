@@ -13,6 +13,9 @@ const releaseRegex = /^Release:(\s*)(\d+)(%\?dist|%\{\?dist\})/m;
 export default class BumpCommand
   implements Command<Record<PropertyKey, never>> {
   flags = {};
+  description =
+    "Increment the `Release:` field in the spec files in the current pull request.";
+  usage = "bump";
 
   async exec(
     ctx: Context<"issue_comment.created">,
