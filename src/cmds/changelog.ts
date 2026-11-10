@@ -15,6 +15,9 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
   flags = {
     print: ["p"],
   };
+  description =
+    "Add a changelog entry to the spec files in the current pull request.";
+  usage = "changelog [--print|-p] <message>";
 
   makeChangelogDateOnly(): string {
     const now = new Date(Date.now());

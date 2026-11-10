@@ -3,9 +3,12 @@ import { Context, Probot } from "probot";
 import NosyncCommand from "./cmds/nosync.ts";
 import ChangelogCommand from "./cmds/changelog.ts";
 import BumpCommand from "./cmds/bump.ts";
+import HelpCommand from "./cmds/help.ts";
 
 export interface Command<Flags extends { [flag: string]: string[] }> {
   flags: Flags;
+  description?: string;
+  usage?: string;
   exec(
     ctx: Context<"issue_comment.created">,
     bot: Probot,
@@ -16,11 +19,17 @@ export interface Command<Flags extends { [flag: string]: string[] }> {
   ): Promise<string>;
 }
 
+const help = new HelpCommand();
+
 export const commands = {
   nosync: new NosyncCommand(),
   changelog: new ChangelogCommand(),
   bump: new BumpCommand(),
+  help,
+  man: help,
 };
+
+help.commands = commands;
 
 export interface InvokeErr {
   display: () => string;
