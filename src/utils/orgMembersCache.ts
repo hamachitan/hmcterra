@@ -13,7 +13,7 @@ function isExpired(timestamp: number): boolean {
 }
 
 export async function getOrgMembers(
-  context: Context<"issue_comment.created">,
+  context: Context,
   app: Probot,
   org: string = "terrapkg",
 ): Promise<string[]> {
