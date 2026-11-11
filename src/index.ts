@@ -8,6 +8,7 @@ import {
   MADOGUCHI_BASE_URL,
   mdFullPkgNameRegex,
   mdRelverRegex,
+  UNTYPED_ISSUE_CLOSE_MESSAGE,
 } from "./consts.ts";
 import processCommands from "./command.ts";
 import { getOrgMembers } from "./utils/orgMembersCache.ts";
@@ -201,6 +202,39 @@ async function handleIssueAssignment(
   );
 }
 
+export async function handleUntypedIssue(
+  context: Context<"issues.opened">,
+  app: Probot,
+): Promise<boolean> {
+  if (context.payload.issue.user.type === "Bot") return false;
+
+  const orgMembers = await getOrgMembers(context, app, "terrapkg");
+  if (orgMembers.includes(context.payload.issue.user.login)) return false;
+
+  const { data: issue } = await context.octokit.issues.get(context.issue());
+  if ((issue as { type?: unknown }).type != null) return false;
+
+  app.log.info(
+    `closing untyped issue #${context.payload.issue.number} opened by ${context.payload.issue.user.login}`,
+  );
+  await context.octokit.issues.createComment(
+    context.issue({ body: UNTYPED_ISSUE_CLOSE_MESSAGE }),
+  );
+  await context.octokit.issues.update(
+    context.issue({ state: "closed", state_reason: "not_planned" }),
+  );
+
+  try {
+    await context.octokit.issues.lock(context.issue({ lock_reason: "spam" }));
+  } catch (error) {
+    app.log.error(
+      `failed to lock untyped issue #${context.payload.issue.number}: ${error}`,
+    );
+  }
+
+  return true;
+}
+
 export async function handleIssues(
   context: Context<"issues.opened" | "issues.reopened" | "issues.edited">,
   app: Probot,
@@ -355,7 +389,13 @@ export default (
     await handlePullRequestLint(context, app);
   });
 
-  app.on(["issues.opened", "issues.reopened"], async (context) => {
+  app.on(["issues.opened"], async (context) => {
+    if (!isServeRepo(context.payload.repository.full_name)) return;
+    if (await handleUntypedIssue(context, app)) return;
+    await handleIssues(context, app);
+  });
+
+  app.on(["issues.reopened"], async (context) => {
     if (!isServeRepo(context.payload.repository.full_name)) return;
     await handleIssues(context, app);
   });
