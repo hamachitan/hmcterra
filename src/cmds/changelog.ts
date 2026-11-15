@@ -5,6 +5,7 @@ import { runRpmspec } from "../utils/rpm.ts";
 import {
   createCommitAndUpdatePR,
   getPullRequestDetails,
+  getPullRequestRepository,
   getSpecFiles,
   processSpecFiles,
 } from "../utils/pr.ts";
@@ -55,7 +56,7 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
 
   async exec(
     ctx: Context<"issue_comment.created">,
-    _: Probot,
+    bot: Probot,
     args: string[],
     flags: { print: (string | null)[] },
   ): Promise<string> {
@@ -73,10 +74,13 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
       return "🛑 No `.spec` files found in this pull request.";
     }
 
+    const repository = await getPullRequestRepository(ctx, bot, pr.data.head);
+    if ("error" in repository) return repository.error;
+
     const packager = await this.getPackager(ctx);
 
     const { errors, blobs } = await processSpecFiles(
-      ctx,
+      repository.target,
       headSha,
       specFiles,
       async (content: string, _: string) => {
@@ -96,7 +100,7 @@ export default class ChangelogCommand implements Command<{ print: string[] }> {
 
     if (blobs.length !== 0) {
       await createCommitAndUpdatePR(
-        ctx,
+        repository.target,
         headSha,
         pr.data.head.ref,
         blobs,

@@ -4,6 +4,7 @@ import { Command } from "../command.ts";
 import {
   createCommitAndUpdatePR,
   getPullRequestDetails,
+  getPullRequestRepository,
   getSpecFiles,
   processSpecFiles,
 } from "../utils/pr.ts";
@@ -19,7 +20,7 @@ export default class BumpCommand
 
   async exec(
     ctx: Context<"issue_comment.created">,
-    _bot: Probot,
+    bot: Probot,
     _args: string[],
   ): Promise<string> {
     const { pr, headSha } = await getPullRequestDetails(ctx);
@@ -29,8 +30,11 @@ export default class BumpCommand
       return "🛑 No `.spec` files found in this pull request.";
     }
 
+    const repository = await getPullRequestRepository(ctx, bot, pr.data.head);
+    if ("error" in repository) return repository.error;
+
     const { errors, blobs } = await processSpecFiles(
-      ctx,
+      repository.target,
       headSha,
       specFiles,
       // deno-lint-ignore require-await
@@ -51,7 +55,7 @@ export default class BumpCommand
 
     if (blobs.length !== 0) {
       await createCommitAndUpdatePR(
-        ctx,
+        repository.target,
         headSha,
         pr.data.head.ref,
         blobs,
