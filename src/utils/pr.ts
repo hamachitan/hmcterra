@@ -1,7 +1,78 @@
 // vim: ts=2 sw=2
-import { Context } from "probot";
+import { Context, Probot } from "probot";
 import { Buffer } from "node:buffer";
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
+
+type RepositoryContext = Pick<
+  Context<"issue_comment.created">,
+  "octokit" | "repo"
+>;
+
+/**
+ * Git objects and refs belong to the head repository, not necessarily the
+ * repository receiving the PR. Forks also require their own installation token.
+ */
+export async function getPullRequestRepository(
+  ctx: Context<"issue_comment.created">,
+  bot: Probot,
+  head: RestEndpointMethodTypes["pulls"]["get"]["response"]["data"]["head"],
+): Promise<{ target: RepositoryContext } | { error: string }> {
+  if (!head.repo) {
+    return { error: "🛑 The pull request's head repository no longer exists." };
+  }
+
+  const owner = head.repo.owner.login;
+  const repo = head.repo.name;
+  const base = ctx.repo();
+  let octokit = ctx.octokit;
+  if (owner !== base.owner || repo !== base.repo) {
+    try {
+      const appOctokit = await bot.auth();
+      const { data: installation } = await appOctokit.apps.getRepoInstallation({
+        owner,
+        repo,
+      });
+      if (installation.permissions.contents !== "write") {
+        return {
+          error:
+            `🛑 The bot needs Contents write permission on \`${owner}/${repo}\` to update this pull request.`,
+        };
+      }
+      octokit = await bot.auth(installation.id);
+    } catch (error) {
+      if (
+        typeof error === "object" && error !== null && "status" in error &&
+        (error.status === 403 || error.status === 404)
+      ) {
+        return {
+          error:
+            `🛑 The bot cannot access the pull request's head repository \`${owner}/${repo}\`. Install the GitHub App there with Contents write permission, or update the branch manually. Allowing maintainer edits does not grant the bot access.`,
+        };
+      }
+      throw error;
+    }
+  }
+
+  const target: RepositoryContext = {
+    octokit,
+    repo: (overrides) => ({ ...ctx.repo(overrides), owner, repo }),
+  };
+  try {
+    await octokit.git.getRef(target.repo({ ref: `heads/${head.ref}` }));
+  } catch (error) {
+    if (
+      typeof error === "object" && error !== null && "status" in error &&
+      error.status === 404
+    ) {
+      return {
+        error:
+          `🛑 The pull request branch \`${owner}/${repo}:${head.ref}\` no longer exists or is inaccessible to the bot.`,
+      };
+    }
+    throw error;
+  }
+  return { target };
+}
 
 export async function getPullRequestDetails(
   ctx: Context<"issue_comment.created">,
@@ -24,7 +95,7 @@ export async function getSpecFiles(
 }
 
 export async function processSpecFiles(
-  ctx: Context<"issue_comment.created">,
+  ctx: RepositoryContext,
   headSha: string,
   specs: RestEndpointMethodTypes["pulls"]["listFiles"]["response"]["data"],
   processor: (
@@ -80,7 +151,7 @@ export async function processSpecFiles(
  * Create a new commit with the updated blobs and update the PR branch.
  */
 export async function createCommitAndUpdatePR(
-  ctx: Context<"issue_comment.created">,
+  ctx: RepositoryContext,
   headSha: string,
   ref: string,
   blobs: Array<{ path: string; sha: string }>,
