@@ -11,6 +11,7 @@ import {
   UNTYPED_ISSUE_CLOSE_MESSAGE,
 } from "./consts.ts";
 import processCommands from "./command.ts";
+import { handleIssueDetails } from "./issueDetails.ts";
 import { getOrgMembers } from "./utils/orgMembersCache.ts";
 import { getSyncLabels } from "./utils/syncsCache.ts";
 import { ciLints } from "./ci_linting.ts";
@@ -392,6 +393,7 @@ export default (
   app.on(["issues.opened"], async (context) => {
     if (!isServeRepo(context.payload.repository.full_name)) return;
     if (await handleUntypedIssue(context, app)) return;
+    await handleIssueDetails(context, app);
     await handleIssues(context, app);
   });
 
